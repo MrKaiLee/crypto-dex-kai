@@ -149,11 +149,11 @@ export default function Home() {
 
   // Comprehensive Crypto List with live market prices
   const [cryptoList] = useState([
-    { name: 'Bitcoin', symbol: 'BTC', network: 'Bitcoin Network', depositAddress: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', price: '91,450.00', change: '+2.45%', rawPrice: 91450.00 },
-    { name: 'Ethereum', symbol: 'ETH', network: 'Ethereum (ERC20)', depositAddress: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', price: '3,420.15', change: '+3.80%', rawPrice: 3420.15 },
-    { name: 'Solana', symbol: 'SOL', network: 'Solana Network', depositAddress: 'So11111111111111111111111111111111111111112', price: '192.80', change: '+7.12%', rawPrice: 192.80 },
+    { name: 'Bitcoin', symbol: 'BTC', network: 'Bitcoin Network', depositAddress: 'bc1qkapq8t7zy6hwd3c8yvk3cdp57xvh6zr6vfu64g', price: '91,450.00', change: '+2.45%', rawPrice: 91450.00 },
+    { name: 'Ethereum', symbol: 'ETH', network: 'Ethereum (ERC20)', depositAddress: '0xC20E4F09165C3480eb1847200f2cC8CED5b7ebBd', price: '3,420.15', change: '+3.80%', rawPrice: 3420.15 },
+    { name: 'Solana', symbol: 'SOL', network: 'Solana Network', depositAddress: 'B9wrP5dq65GEoojuEM9PgRhxMpWAKKG86oZqZ9VFVLD7', price: '192.80', change: '+7.12%', rawPrice: 192.80 },
     { name: 'Binance Coin', symbol: 'BNB', network: 'BNB Smart Chain (BEP20)', depositAddress: '0x324415b858e46955a1d7f4955b9a5444b025b44d', price: '645.40', change: '+1.25%', rawPrice: 645.40 },
-    { name: 'USDT', symbol: 'USDT', network: 'Tron (TRC20)', depositAddress: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t', price: '1.00', change: '+0.01%', rawPrice: 1.00 },
+    { name: 'USDT', symbol: 'USDT', network: 'Tron (TRC20)', depositAddress: 'TEJgNhwBSnhXYc8vstmNnbnPKigVoa6GfF', price: '1.00', change: '+0.01%', rawPrice: 1.00 },
     { name: 'Ripple', symbol: 'XRP', network: 'Ripple Network', depositAddress: 'rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh', price: '1.45', change: '+4.10%', rawPrice: 1.45 },
     { name: 'Cardano', symbol: 'ADA', network: 'Cardano Network', depositAddress: 'addr1qx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwq2ytjqp', price: '0.78', change: '-1.20%', rawPrice: 0.78 },
     { name: 'Dogecoin', symbol: 'DOGE', network: 'Dogecoin Network', depositAddress: 'D9WJ7xGj9s82jsh773hhzZss83u91jjkL', price: '0.24', change: '+8.45%', rawPrice: 0.24 }
