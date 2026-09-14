@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, doc, updateDoc, increment } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 
 export default function AdminDashboard() {
@@ -20,12 +20,12 @@ export default function AdminDashboard() {
     return () => unsubscribe();
   }, []);
 
-  const handleBalanceUpdate = async (userId) => {
-    const amountStr = prompt("Enter amount to add/subtract (e.g., 50 or -50):");
-    if (!amountStr) return;
-
-    const amount = parseFloat(amountStr);
-    if (isNaN(amount)) {
+  const handleBalanceUpdate = async (userId, currentBalance) => {
+    const amountStr = prompt(`Current Balance is $${currentBalance !== undefined ? currentBalance : 0}. Enter new exact balance amount:`);
+    if (amountStr === null) return;
+    
+    const newBalance = parseFloat(amountStr);
+    if (isNaN(newBalance)) {
       alert("Please enter a valid number");
       return;
     }
@@ -33,7 +33,7 @@ export default function AdminDashboard() {
     try {
       const userRef = doc(db, 'users', userId);
       await updateDoc(userRef, {
-        balance: increment(amount)
+        balance: newBalance
       });
       alert("Balance updated successfully!");
     } catch (error) {
@@ -59,7 +59,7 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <button
-                  onClick={() => handleBalanceUpdate(user.id)}
+                  onClick={() => handleBalanceUpdate(user.id, user.balance)}
                   className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-bold"
                 >
                   Update Balance
