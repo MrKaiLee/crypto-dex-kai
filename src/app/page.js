@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -73,17 +73,39 @@ export default function Home() {
   const [selectedWithdrawCoin, setSelectedWithdrawCoin] = useState(cryptoList[0]);
   const [tradeTabMode, setTradeTabMode] = useState('spot'); // 'spot' or 'futures'
 
-  // Monitor Firebase Authentication State
+  // Monitor Firebase Authentication State and Real-time Balance
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    let unsubscribeSnapshot = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setIsLoggedIn(true);
         setAuthEmail(user.email);
+        
+        // Real-time listener for user balance from Firestore
+        const userRef = doc(db, 'users', user.uid);
+        unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setSpotBalance(data.balance || 0);
+          }
+        });
       } else {
         setIsLoggedIn(false);
+        setAuthEmail('');
+        setSpotBalance(0);
+        if (unsubscribeSnapshot) {
+          unsubscribeSnapshot();
+        }
       }
     });
-    return () => unsubscribe();
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+      }
+    };
   }, []);
 
   // Fetch Live Crypto Prices from CoinGecko API
