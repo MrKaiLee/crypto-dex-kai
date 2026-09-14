@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
-
+import Link from 'next/link';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSignUp, setIsSignUp] = useState(true);
@@ -964,10 +964,10 @@ export default function Home() {
           <span className="text-lg">📊</span>
           <span className="text-[10px]">Markets</span>
         </button>
-        <button onClick={() => setActiveTab('trade')} className={`flex flex-col items-center cursor-pointer ${activeTab === 'trade' ? 'text-[#f0b90b]' : 'text-gray-400'}`}>
-          <span className="text-lg">💱</span>
-          <span className="text-[10px]">Trade</span>
-        </button>
+        <Link href="/trade" className="flex flex-col items-center">
+  <span className="text-lg">🔄</span>
+  <span className="text-[10px]">Trade</span>
+</Link>
         <button onClick={() => setActiveTab('asset')} className={`flex flex-col items-center cursor-pointer ${activeTab === 'asset' ? 'text-[#f0b90b]' : 'text-gray-400'}`}>
           <span className="text-lg">💰</span>
           <span className="text-[10px]">Assets</span>
