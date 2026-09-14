@@ -1,90 +1,85 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { db } from '../../firebase';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, increment } from 'firebase/firestore';
+import { db } from '@/firebase';
 
 export default function AdminDashboard() {
-  const [users, setUsers] = useState([]);
+  const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch users from Firebase Firestore
-  const fetchUsers = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, 'users'));
-      const usersList = querySnapshot.docs.map(doc => ({
+  useEffect(() => {
+    const q = query(collection(db, 'trades'), where('status', '==', 'pending'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const tradesList = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
-      setUsers(usersList);
+      setTrades(tradesList);
       setLoading(false);
-    } catch (error) {
-      console.error("Error fetching users: ", error);
-      setLoading(false);
-    }
-  };
+    });
 
-  useEffect(() => {
-    fetchUsers();
+    return () => unsubscribe();
   }, []);
 
-  // Update User Balance
-  const handleUpdateBalance = async (userId, currentBalance) => {
-    const newBalance = prompt("Enter new balance amount:", currentBalance || 0);
-    if (newBalance === null) return;
-
+  const handleResolveTrade = async (tradeId, userId, amount, outcome) => {
     try {
+      const tradeRef = doc(db, 'trades', tradeId);
       const userRef = doc(db, 'users', userId);
-      await updateDoc(userRef, { balance: Number(newBalance) });
-      alert("Balance updated successfully!");
-      fetchUsers(); // Refresh data
+
+      if (outcome === 'win') {
+        const profit = amount * 1.8;
+        
+        await updateDoc(tradeRef, { status: 'win' });
+        await updateDoc(userRef, { balance: increment(profit) });
+        
+        alert('Trade marked as WIN and balance updated successfully!');
+      } else {
+        await updateDoc(tradeRef, { status: 'loss' });
+        alert('Trade marked as LOSS.');
+      }
     } catch (error) {
-      console.error("Error updating balance: ", error);
-      alert("Failed to update balance.");
+      console.error('Error resolving trade: ', error);
+      alert('Failed to resolve trade');
     }
   };
 
-  if (loading) {
-    return <div className="p-8 text-white">Loading...</div>;
-  }
-
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-8">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
-      <p className="mb-6 text-gray-400">Manage registered users and update balances</p>
+    <div className="p-8 text-white min-h-screen bg-slate-950">
+      <h1 className="text-2xl font-bold mb-6">Admin Dashboard - Pending Trades</h1>
 
-      <div className="overflow-x-auto bg-gray-800 rounded-lg p-4 shadow-md">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="border-b border-gray-700 text-gray-400">
-              <th className="p-3">User (Email / ID)</th>
-              <th className="p-3">Balance</th>
-              <th className="p-3">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.length === 0 ? (
-              <tr>
-                <td colSpan="3" className="p-4 text-center text-gray-500">No registered users found.</td>
-              </tr>
-            ) : (
-              users.map((user) => (
-                <tr key={user.id} className="border-b border-gray-700 hover:bg-gray-750">
-                  <td className="p-3">{user.email || user.id}</td>
-                  <td className="p-3 text-green-400 font-semibold">{user.balance || 0} USD</td>
-                  <td className="p-3">
-                    <button
-                      onClick={() => handleUpdateBalance(user.id, user.balance)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm transition"
-                    >
-                      Update Balance
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      {loading ? (
+        <p>Loading pending trades...</p>
+      ) : trades.length === 0 ? (
+        <p className="text-gray-400">No pending trades available.</p>
+      ) : (
+        <div className="grid gap-4">
+          {trades.map((trade) => (
+            <div key={trade.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center">
+              <div>
+                <p><strong>User:</strong> {trade.userEmail || trade.userId}</p>
+                <p><strong>Amount:</strong> {trade.amount} USDT</p>
+                <p><strong>Type:</strong> <span className={trade.type === 'buy' ? 'text-purple-400 font-bold' : 'text-green-400 font-bold'}>{trade.type.toUpperCase()}</span></p>
+                <p><strong>Duration:</strong> {trade.duration}</p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleResolveTrade(trade.id, trade.userId, trade.amount, 'win')}
+                  className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-bold"
+                >
+                  Approve (Win)
+                </button>
+                <button
+                  onClick={() => handleResolveTrade(trade.id, trade.userId, trade.amount, 'loss')}
+                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-bold"
+                >
+                  Reject (Loss)
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

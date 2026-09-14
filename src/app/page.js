@@ -112,7 +112,7 @@ export default function Home() {
   useEffect(() => {
     const fetchLivePrices = async () => {
       try {
-        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,tether,ripple,cardano,dogecoin&vs_currencies=usd&include_24hr_change=true');
+        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,solana,cardano&vs_currencies=usd&include_24hr_change=true');
         const data = await response.json();
 
         setCryptoList(prevList => 
