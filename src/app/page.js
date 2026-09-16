@@ -960,10 +960,10 @@ export default function Home() {
           <span className="text-lg">🏠</span>
           <span className="text-[10px]">Home</span>
         </button>
-        <button onClick={() => setActiveTab('market')} className={`flex flex-col items-center cursor-pointer ${activeTab === 'market' ? 'text-[#f0b90b]' : 'text-gray-400'}`}>
-          <span className="text-lg">📊</span>
-          <span className="text-[10px]">Markets</span>
-        </button>
+        <Link href="/market" className="flex flex-col items-center">
+  <span className="text-lg">📊</span>
+  <span className="text-[10px]">Markets</span>
+</Link>
         <Link href="/trade" className="flex flex-col items-center">
   <span className="text-lg">🔄</span>
   <span className="text-[10px]">Trade</span>
