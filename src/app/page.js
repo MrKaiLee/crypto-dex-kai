@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import SupportComponent from '@/components/Support';
 export default function Home() {
@@ -195,26 +195,41 @@ export default function Home() {
     setTimeout(() => setCopiedAddress(false), 2000);
   };
 
-  const handleDepositSubmit = (e) => {
-    e.preventDefault();
-    const amount = parseFloat(depositAmount);
-    if (!amount || amount <= 0) {
-      alert('Please enter a valid deposit amount.');
-      return;
-    }
+  const handleDepositSubmit = async (e) => {
+  e.preventDefault();
+  const amount = parseFloat(depositAmount);
+  if (!amount || amount <= 0) {
+    alert('Please enter a valid deposit amount.');
+    return;
+  }
 
-    const fiatValue = amount * selectedMarketCoin.rawPrice;
-    setSpotBalance((prev) => prev + fiatValue);
-    
-    setUserCryptoHoldings((prev) => ({
-      ...prev,
-      [selectedMarketCoin.symbol]: (prev[selectedMarketCoin.symbol] || 0) + amount
-    }));
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    alert('Please log in to make a deposit.');
+    return;
+  }
 
-    alert(`Successfully deposited ${amount} ${selectedMarketCoin.symbol}! ($${fiatValue.toFixed(2)})`);
+  try {
+    await addDoc(collection(db, 'deposits'), {
+      userId: currentUser.uid,
+      userEmail: currentUser.email || '',
+      coin: selectedMarketCoin.symbol,
+      amount: amount,
+      estimatedUsd: Number(amount * selectedMarketCoin.rawPrice) || 0,
+      status: 'pending',
+      createdAt: serverTimestamp(),
+    });
+
+    alert(
+      'Dear Customer,\n\nYour deposit has been successfully recorded on the blockchain and is currently undergoing verification. Once approved, the funds will automatically be credited to your wallet.'
+    );
     setDepositAmount('');
     setModalType(null);
-  };
+  } catch (error) {
+    console.error('Error saving deposit request: ', error);
+    alert('Failed to submit the deposit. Please try again.');
+  }
+};
 
   const handleWithdrawSubmit = (e) => {
     e.preventDefault();
