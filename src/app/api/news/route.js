@@ -7,6 +7,15 @@ const SOURCES = {
     { name: 'CoinDesk', url: 'https://www.coindesk.com/arc/outboundfeeds/rss' },
     { name: 'Decrypt', url: 'https://decrypt.co/feed' },
   ],
+  stocks: [
+    { name: 'Yahoo Finance', url: 'https://finance.yahoo.com/news/rssindex' },
+    { name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
+    { name: 'MarketWatch', url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories' },
+  ],
+  forex: [
+    { name: 'FXStreet', url: 'https://www.fxstreet.com/rss/news' },
+    { name: 'Investing.com', url: 'https://www.investing.com/rss/news_1.rss' },
+  ],
 };
 
 function decodeEntities(text) {

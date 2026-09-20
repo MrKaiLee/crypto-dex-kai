@@ -1,18 +1,19 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 
-// Each tab knows how to load its own articles. More tabs (Stocks, Forex) can be added here later.
+// Loads the articles of one category from our own news route.
+const loadCategory = (category) => async () => {
+  const res = await fetch(`/api/news?category=${category}`);
+  if (!res.ok) throw new Error('News request failed');
+  const json = await res.json();
+  return Array.isArray(json.articles) ? json.articles.slice(0, 12) : [];
+};
+
+// Each tab knows how to load its own articles.
 const TABS = [
-  {
-    id: 'crypto',
-    label: 'Crypto',
-    load: async () => {
-      const res = await fetch('/api/news?category=crypto');
-      if (!res.ok) throw new Error('News request failed');
-      const json = await res.json();
-      return Array.isArray(json.articles) ? json.articles.slice(0, 12) : [];
-    },
-  },
+  { id: 'crypto', label: 'Crypto', load: loadCategory('crypto') },
+  { id: 'stocks', label: 'Stocks', load: loadCategory('stocks') },
+  { id: 'forex', label: 'Forex', load: loadCategory('forex') },
 ];
 
 function timeAgo(timestamp) {
