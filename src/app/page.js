@@ -4,6 +4,7 @@ import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import Link from 'next/link';
+import SupportComponent from '@/components/Support';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSignUp, setIsSignUp] = useState(true);
@@ -734,13 +735,20 @@ const minimumRequired = 5000;
                     </div>
                   );
                 })}
+                <button 
+  onClick={() => setActiveTab('support')} 
+  className={`flex flex-col items-center cursor-pointer ${activeTab === 'support' ? 'text-[#f0b90b]' : 'text-gray-400'}`}
+>
+  <span className="text-base">🎧</span>
+  <span className="text-[10px] mt-1 font-semibold">Support</span>
+</button>
               </div>
             </div>
           </div>
         )}
 
       </div>
-
+{activeTab === 'support' && (<SupportComponent onBack={() => setActiveTab('home')} />)}
       {modalType === 'deposit' && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-[#1e2329] border border-[#2b313a] p-6 rounded-2xl w-full max-w-md space-y-4">
