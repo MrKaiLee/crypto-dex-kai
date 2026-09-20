@@ -5,6 +5,8 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthState
 import { doc, setDoc, onSnapshot, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import SupportComponent from '@/components/Support';
+import NewsFeed from '@/components/NewsFeed';
+import FearGreedIndex from '@/components/FearGreedIndex';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSignUp, setIsSignUp] = useState(true);
@@ -502,6 +504,14 @@ const minimumRequired = 5000;
                     <div className="text-lg font-bold text-white">${coin.price}</div>
                   </div>
                 ))}
+              </div>
+            </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="order-2 lg:order-1 lg:col-span-2">
+                <NewsFeed />
+              </div>
+              <div className="order-1 lg:order-2 lg:col-span-1">
+                <FearGreedIndex />
               </div>
             </div>
           </div>
