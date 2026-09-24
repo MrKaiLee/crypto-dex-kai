@@ -13,7 +13,15 @@ const CRYPTO_MARKET = [
   { symbol: 'ADAUSD', name: 'Cardano / U.S. Dollar', price: 0.39 },
   { symbol: 'DOGEUSD', name: 'Dogecoin / U.S. Dollar', price: 0.11 }
 ];
-
+// Maps our symbols to CoinGecko's ids so we can fetch live prices
+const COINGECKO_IDS = {
+  ETHUSD: 'ethereum',
+  BTCUSD: 'bitcoin',
+  SOLUSD: 'solana',
+  XRPUSD: 'ripple',
+  ADAUSD: 'cardano',
+  DOGEUSD: 'dogecoin',
+};
 export default function UserTradePage() {
   const [userId, setUserId] = useState('');
   const [selectedCrypto, setSelectedCrypto] = useState(CRYPTO_MARKET[0]);
@@ -24,9 +32,9 @@ export default function UserTradePage() {
   const [loading, setLoading] = useState(false);
   const [tradeHistory, setTradeHistory] = useState([]);
   const [selectedTradeDetails, setSelectedTradeDetails] = useState(null);
-
+const [cryptoMarket, setCryptoMarket] = useState(CRYPTO_MARKET);
   // Filter cryptos based on search input
-  const filteredCryptos = CRYPTO_MARKET.filter(c => 
+  const filteredCryptos = cryptoMarket.filter(c => 
     c.symbol.toLowerCase().includes(searchQuery.toLowerCase()) || 
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -50,6 +58,42 @@ export default function UserTradePage() {
     return () => unsubscribe();
   }, [userId]);
 
+  // Fetch live crypto prices from CoinGecko, same source as the Home page
+  useEffect(() => {
+    const fetchLivePrices = async () => {
+      try {
+        const ids = Object.values(COINGECKO_IDS).join(',');
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`
+        );
+        const data = await response.json();
+
+        setCryptoMarket((prevList) =>
+          prevList.map((coin) => {
+            const geckoId = COINGECKO_IDS[coin.symbol];
+            if (geckoId && data[geckoId]) {
+              return { ...coin, price: data[geckoId].usd };
+            }
+            return coin;
+          })
+        );
+
+        setSelectedCrypto((prev) => {
+          const geckoId = COINGECKO_IDS[prev.symbol];
+          if (geckoId && data[geckoId]) {
+            return { ...prev, price: data[geckoId].usd };
+          }
+          return prev;
+        });
+      } catch (error) {
+        console.error('Failed to fetch live prices:', error);
+      }
+    };
+
+    fetchLivePrices();
+    const interval = setInterval(fetchLivePrices, 15000);
+    return () => clearInterval(interval);
+  }, []);
   // Realistic profit calculation: for $500 at 60s, profit is around $40, scaling proportionally with amount & duration
   const calculateEstimatedProfit = () => {
     const numAmount = Number(amount || 0);
