@@ -233,43 +233,45 @@ export default function Home() {
   }
 };
 
-  const handleWithdrawSubmit = (e) => {
-    e.preventDefault();
-    const amount = parseFloat(withdrawAmount);
-    if (!withdrawAddress) {
-      alert('Please enter a valid withdrawal address.');
-      return;
-    }
-    if (!amount || amount <= 0) {
-      alert('Please enter a valid withdrawal amount.');
-      return;
-    }
-const minimumRequired = 5000;
-    const currentBalance = userCryptoHoldings[selectedWithdrawCoin?.symbol] || 0;
+  const handleWithdrawSubmit = async (e) => {
+  e.preventDefault();
+  const amount = parseFloat(withdrawAmount);
+  if (!withdrawAddress) {
+    alert('Please enter a valid withdrawal address.');
+    return;
+  }
+  if (!amount || amount <= 0) {
+    alert('Please enter a valid withdrawal amount.');
+    return;
+  }
 
-    if (currentBalance < minimumRequired) {
-      alert("Dear Valued Customer,\nRegarding your withdrawal request, please note that a minimum wallet balance of $5,000 is required to complete this transaction.");
-      return;
-    }
-    const currentCoinHolding = userCryptoHoldings[selectedWithdrawCoin.symbol] || 0;
-    if (currentCoinHolding < amount) {
-      alert(`Insufficient ${selectedWithdrawCoin.symbol} balance.`);
-      return;
-    }
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    alert('Please log in to make a withdrawal.');
+    return;
+  }
 
-    const fiatDeduction = amount * selectedWithdrawCoin.rawPrice;
-    
-    setUserCryptoHoldings((prev) => ({
-      ...prev,
-      [selectedWithdrawCoin.symbol]: prev[selectedWithdrawCoin.symbol] - amount
-    }));
-    setSpotBalance((prev) => Math.max(0, prev - fiatDeduction));
+  try {
+    await addDoc(collection(db, 'withdrawals'), {
+      userId: currentUser.uid,
+      userEmail: currentUser.email || '',
+      coin: selectedWithdrawCoin.symbol,
+      amount: amount,
+      address: withdrawAddress,
+      estimatedUsd: Number(amount * selectedWithdrawCoin.rawPrice) || 0,
+      status: 'pending',
+      createdAt: serverTimestamp(),
+    });
 
-    alert(`Withdrawal of ${amount} ${selectedWithdrawCoin.symbol} submitted successfully!`);
+    alert('✅ Dear Customer,\n\nYour withdrawal request has been successfully recorded on the blockchain and is currently undergoing verification. Once your request is approved, the funds will be automatically credited to your designated address.');
     setWithdrawAddress('');
     setWithdrawAmount('');
     setModalType(null);
-  };
+  } catch (error) {
+    console.error('Error saving withdrawal request: ', error);
+    alert('Failed to submit the withdrawal. Please try again.');
+  }
+};
 
   const handleConvertSubmit = (e) => {
     e.preventDefault();
