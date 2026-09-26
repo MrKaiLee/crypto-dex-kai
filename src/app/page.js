@@ -445,6 +445,9 @@ export default function Home() {
           <span className="font-bold text-white text-base tracking-wide">CryptoDEX</span>
         </div>
         <div className="flex items-center space-x-3">
+                    <span className="flex items-center gap-1 bg-[#0ecb81]/20 text-[#0ecb81] text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full">
+              ✅ Verified
+            </span>
           <span className="text-gray-400 text-xs hidden sm:inline">{authEmail}</span>
           <button 
             onClick={handleSignOut} 
