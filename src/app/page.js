@@ -223,7 +223,7 @@ export default function Home() {
     });
 
     alert(
-      'Dear Customer,\n\nYour deposit has been successfully recorded on the blockchain and is currently undergoing verification. Once approved, the funds will automatically be credited to your wallet.'
+            '✅ Dear Customer,\n\nYour deposit has been successfully recorded on the blockchain and is currently undergoing verification. Once approved, the funds will automatically be credited to your wallet.'
     );
     setDepositAmount('');
     setModalType(null);
