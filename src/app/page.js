@@ -111,11 +111,11 @@ export default function Home() {
     };
   }, []);
 
-  // Fetch Live Crypto Prices from CoinGecko API
+  // Fetch Live Crypto Prices from our own cached route (avoids CoinGecko rate limits)
   useEffect(() => {
     const fetchLivePrices = async () => {
       try {
-        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,solana,cardano&vs_currencies=usd&include_24hr_change=true');
+        const response = await fetch('/api/prices');
         const data = await response.json();
 
         setCryptoList(prevList => 
@@ -139,7 +139,7 @@ export default function Home() {
     };
 
     fetchLivePrices();
-    const interval = setInterval(fetchLivePrices, 15000); 
+    const interval = setInterval(fetchLivePrices, 8000); 
     return () => clearInterval(interval);
   }, []);
 

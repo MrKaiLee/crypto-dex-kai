@@ -36,14 +36,11 @@ export default function MarketPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cryptoList, setCryptoList] = useState(INITIAL_LIST);
 
-  // Fetch live crypto prices from CoinGecko, same source as the Home page
+  // Fetch live crypto prices from our own cached route (avoids CoinGecko rate limits)
   useEffect(() => {
     const fetchLivePrices = async () => {
       try {
-        const ids = Object.values(COINGECKO_IDS).join(',');
-        const response = await fetch(
-          `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true`
-        );
+        const response = await fetch('/api/prices');
         const data = await response.json();
 
         setCryptoList((prevList) =>
@@ -67,7 +64,7 @@ export default function MarketPage() {
     };
 
     fetchLivePrices();
-    const interval = setInterval(fetchLivePrices, 15000);
+    const interval = setInterval(fetchLivePrices, 8000);
     return () => clearInterval(interval);
   }, []);
 
