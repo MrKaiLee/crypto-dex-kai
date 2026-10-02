@@ -383,13 +383,21 @@ const [cryptoMarket, setCryptoMarket] = useState(CRYPTO_MARKET);
                 <span className="text-slate-400">Exit Price:</span>
                 <span className="font-bold">${selectedTradeDetails.exitPrice}</span>
               </div>
-              <div className="flex justify-between bg-slate-800/50 p-2.5 rounded-lg">
+                            <div className="flex justify-between bg-slate-800/50 p-2.5 rounded-lg">
                 <span className="text-slate-400">Outcome Status:</span>
                 <span className={`font-bold uppercase ${
                   selectedTradeDetails.status === 'win' ? 'text-green-400' : 
                   selectedTradeDetails.status === 'loss' ? 'text-red-400' : 'text-yellow-400'
                 }`}>
                   {selectedTradeDetails.status}
+                </span>
+              </div>
+              <div className="flex justify-between bg-slate-800/50 p-2.5 rounded-lg">
+                <span className="text-slate-400">Profit / Loss:</span>
+                <span className={`font-bold ${
+                  Number(selectedTradeDetails.profitAmount) >= 0 ? 'text-green-400' : 'text-red-400'
+                }`}>
+                  {Number(selectedTradeDetails.profitAmount) >= 0 ? '+' : ''}${selectedTradeDetails.profitAmount}
                 </span>
               </div>
             </div>

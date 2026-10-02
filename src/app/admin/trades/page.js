@@ -22,12 +22,27 @@ export default function AdminTrades() {
   }, []);
 
   // Function for admin to update trade status to approved, win, or loss
-  const handleTradeAction = async (tradeId, newStatus) => {
+    const handleTradeAction = async (tradeId, newStatus) => {
     try {
       const tradeRef = doc(db, 'trades', tradeId);
-      await updateDoc(tradeRef, {
-        status: newStatus // 'approved', 'win', or 'loss'
-      });
+      const trade = trades.find((t) => t.id === tradeId);
+
+      const updates = { status: newStatus }; // 'approved', 'win', or 'loss'
+
+      if (trade) {
+        const tradeAmount = Number(trade.amount) || 0;
+        if (newStatus === 'win') {
+          // Keep the amount positive (profit); use the existing profitAmount if it's already positive,
+          // otherwise fall back to the trade's own amount.
+          const existingProfit = Number(trade.profitAmount);
+          updates.profitAmount = existingProfit > 0 ? existingProfit : tradeAmount;
+        } else if (newStatus === 'loss') {
+          // The user loses the full amount they put into the trade.
+          updates.profitAmount = -tradeAmount;
+        }
+      }
+
+      await updateDoc(tradeRef, updates);
       alert(`Trade status updated to ${newStatus.toUpperCase()} successfully!`);
     } catch (error) {
       console.error("Error updating trade status: ", error);
