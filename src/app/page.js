@@ -9,6 +9,7 @@ import NewsFeed from '@/components/NewsFeed';
 import FearGreedIndex from '@/components/FearGreedIndex';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
   const [isSignUp, setIsSignUp] = useState(true);
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
@@ -101,6 +102,7 @@ export default function Home() {
           unsubscribeSnapshot();
         }
       }
+      setAuthChecking(false);
     });
 
     return () => {
@@ -368,7 +370,13 @@ export default function Home() {
     coin.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     coin.symbol.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
+if (authChecking) {
+    return (
+      <div className="bg-[#181a20] text-gray-200 min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-gray-700 border-t-[#f0b90b] rounded-full animate-spin"></div>
+      </div>
+    );
+  }
   if (!isLoggedIn) {
     return (
       <div className="bg-[#181a20] text-gray-200 min-h-screen flex items-center justify-center p-4 font-sans text-xs">
