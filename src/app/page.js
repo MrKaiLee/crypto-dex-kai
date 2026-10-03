@@ -383,10 +383,10 @@ if (authChecking) {
         <div className="bg-[#2b313a]/30 border border-[#2b313a] p-6 rounded-2xl w-full max-w-md space-y-4 shadow-xl">
           <div className="flex items-center space-x-2 justify-center mb-2">
             <div className="w-9 h-9 rounded-full bg-[#f0b90b] flex items-center justify-center text-black font-bold text-sm">C</div>
-            <span className="font-bold text-xl text-white tracking-wide">CryptoDEX</span>
+            <span className="font-bold text-xl text-white tracking-wide">MetaTradeX</span>
           </div>
 
-          <h2 className="text-sm font-bold text-center text-gray-200">{isSignUp ? 'Create a CryptoDEX Account' : 'Sign In to CryptoDEX'}</h2>
+          <h2 className="text-sm font-bold text-center text-gray-200">{isSignUp ? 'Create a MetaTradeX Account' : 'Sign In to MetaTradeX'}</h2>
           
           {authError && <div className="bg-red-500/20 text-red-400 p-2.5 rounded text-center font-medium">{authError}</div>}
           {authSuccess && <div className="bg-[#0ecb81]/20 text-[#0ecb81] p-2.5 rounded text-center font-medium">{authSuccess}</div>}
@@ -450,7 +450,7 @@ if (authChecking) {
       <div className="bg-[#181a20] border-b border-[#2b313a] px-4 py-3 flex justify-between items-center sticky top-0 z-50">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 rounded-full bg-[#f0b90b] flex items-center justify-center text-black font-bold text-sm">C</div>
-          <span className="font-bold text-white text-base tracking-wide">CryptoDEX</span>
+          <span className="font-bold text-white text-base tracking-wide">MetaTradeX</span>
         </div>
         <div className="flex items-center space-x-3">
                     <span className="flex items-center gap-1 bg-[#0ecb81]/20 text-[#0ecb81] text-[10px] sm:text-xs font-bold px-2 py-1 rounded-full">
@@ -472,7 +472,7 @@ if (authChecking) {
           <div className="space-y-4">
             <div className="bg-gradient-to-r from-[#2b313a]/50 to-[#1e2329] border border-[#2b313a] p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="space-y-2 text-center md:text-left">
-                <h1 className="text-xl font-bold text-white">CryptoDEX Exchange</h1>
+                <h1 className="text-xl font-bold text-white">MetaTradeX Exchange</h1>
                 <p className="text-gray-400">Buy, trade, and earn cryptocurrency with professional live tools.</p>
                 <div className="text-sm font-semibold text-[#f0b90b] pt-1">Total Spot Balance: ${spotBalance.toFixed(2)} | Futures Balance: ${futuresBalance.toFixed(2)}</div>
               </div>

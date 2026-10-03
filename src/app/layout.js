@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "CryptoDEX",
+  title: "MetaTradeX",
   description: "Decentralized Exchange",
 };
 
