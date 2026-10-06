@@ -9,6 +9,7 @@ import NewsFeed from '@/components/NewsFeed';
 import FearGreedIndex from '@/components/FearGreedIndex';
 import PriceTicker from './PriceTicker';
 import TopMovers from './TopMovers';
+import PromoBanner from './PromoBanner';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
@@ -473,6 +474,7 @@ if (authChecking) {
         {activeTab === 'home' && (
           <div className="space-y-4">
             <PriceTicker coins={cryptoList} />
+            <PromoBanner onNavigate={setActiveTab} />
             <div className="bg-gradient-to-r from-[#2b313a]/50 to-[#1e2329] border border-[#2b313a] p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="space-y-2 text-center md:text-left">
                 <h1 className="text-xl font-bold text-white">MetaTradeX Exchange</h1>
