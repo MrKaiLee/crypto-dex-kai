@@ -10,6 +10,7 @@ import FearGreedIndex from '@/components/FearGreedIndex';
 import PriceTicker from './PriceTicker';
 import TopMovers from './TopMovers';
 import PromoBanner from './PromoBanner';
+import ForexRates from './ForexRates';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
@@ -525,6 +526,7 @@ if (authChecking) {
               </div>
             </div>
             <TopMovers coins={cryptoList} onSelect={(coin) => { setSelectedMarketCoin(coin); setActiveTab('market'); }} />
+              <ForexRates />
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="order-2 lg:order-1 lg:col-span-2">
                 <NewsFeed />
