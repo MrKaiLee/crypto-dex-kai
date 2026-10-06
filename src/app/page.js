@@ -7,6 +7,8 @@ import Link from 'next/link';
 import SupportComponent from '@/components/Support';
 import NewsFeed from '@/components/NewsFeed';
 import FearGreedIndex from '@/components/FearGreedIndex';
+import PriceTicker from './PriceTicker';
+import TopMovers from './TopMovers';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
@@ -470,6 +472,7 @@ if (authChecking) {
         
         {activeTab === 'home' && (
           <div className="space-y-4">
+            <PriceTicker coins={cryptoList} />
             <div className="bg-gradient-to-r from-[#2b313a]/50 to-[#1e2329] border border-[#2b313a] p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="space-y-2 text-center md:text-left">
                 <h1 className="text-xl font-bold text-white">MetaTradeX Exchange</h1>
@@ -519,6 +522,7 @@ if (authChecking) {
                 ))}
               </div>
             </div>
+            <TopMovers coins={cryptoList} onSelect={(coin) => { setSelectedMarketCoin(coin); setActiveTab('market'); }} />
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="order-2 lg:order-1 lg:col-span-2">
                 <NewsFeed />
