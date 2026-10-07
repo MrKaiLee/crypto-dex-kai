@@ -11,6 +11,7 @@ import PriceTicker from './PriceTicker';
 import TopMovers from './TopMovers';
 import PromoBanner from './PromoBanner';
 import ForexRates from './ForexRates';
+import RecentActivity from './RecentActivity';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
@@ -763,6 +764,7 @@ if (authChecking) {
                   <div className="text-xl font-bold text-white mt-1">${futuresBalance.toFixed(2)}</div>
                 </div>
               </div>
+              <RecentActivity userId={auth.currentUser ? auth.currentUser.uid : null} />
 
               <div className="space-y-2 mt-4">
                 <h3 className="font-bold text-white text-sm">Crypto Holdings</h3>
