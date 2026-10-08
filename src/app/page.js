@@ -12,6 +12,7 @@ import TopMovers from './TopMovers';
 import PromoBanner from './PromoBanner';
 import ForexRates from './ForexRates';
 import RecentActivity from './RecentActivity';
+import TradingChart from './TradingChart';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
@@ -580,28 +581,7 @@ if (authChecking) {
                   </div>
                 </div>
 
-                <div className="bg-[#181a20] h-72 rounded-xl flex flex-col items-center justify-center border border-gray-800 relative p-4 overflow-hidden">
-                  <div className="absolute top-3 left-3 flex gap-2 text-[10px] text-gray-400">
-                    <span className="bg-[#2b313a] px-2 py-0.5 rounded text-white font-bold">1H</span>
-                    <span className="hover:text-white cursor-pointer">4H</span>
-                    <span className="hover:text-white cursor-pointer">1D</span>
-                    <span className="hover:text-white cursor-pointer">1W</span>
-                  </div>
-                  <div className="absolute top-3 right-3 text-[10px] text-[#0ecb81] font-mono animate-pulse">● LIVE CANDLE FEED</div>
-                  
-                  <div className="flex items-end justify-center space-x-2 w-full h-40 pt-6">
-                    {[45, 60, 52, 68, 55, 75, 70, 88, 80, 95, 90, 105, 100, 115, 110, 125, 120, 135].map((val, idx) => {
-                      const isGreen = idx % 2 === 0;
-                      return (
-                        <div key={idx} className="flex flex-col items-center h-full justify-end group relative">
-                          <div className={`w-0.5 ${isGreen ? 'bg-[#0ecb81]' : 'bg-red-500'} h-full absolute`}></div>
-                          <div style={{ height: `${val}px` }} className={`w-3 rounded-sm z-10 ${isGreen ? 'bg-[#0ecb81]' : 'bg-red-500'}`}></div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="text-[11px] text-gray-400 mt-3">Real-time Candlestick Chart for {selectedMarketCoin.symbol}/USDT</div>
-                </div>
+                <TradingChart symbol={selectedMarketCoin.symbol} />
               </div>
 
               <div className="bg-[#2b313a]/20 border border-[#2b313a] p-4 rounded-xl space-y-4 flex flex-col justify-between">

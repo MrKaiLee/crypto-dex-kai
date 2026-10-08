@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { collection, addDoc, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { auth, db } from '@/firebase';
 import Link from 'next/link';
 
 // Available Cryptos list with mock market prices
@@ -105,8 +105,13 @@ const [cryptoMarket, setCryptoMarket] = useState(CRYPTO_MARKET);
   const estimatedProfit = calculateEstimatedProfit();
 
   const handleTradeSubmit = async (type) => {
-    if (!userId.trim() || !amount || Number(amount) <= 0) {
-      alert("Please enter a valid User ID and amount!");
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      alert('Please log in to place a trade.');
+      return;
+    }
+    if (!amount || Number(amount) <= 0) {
+      alert("Please enter a valid amount!");
       return;
     }
 
@@ -119,7 +124,8 @@ const [cryptoMarket, setCryptoMarket] = useState(CRYPTO_MARKET);
       const exitPrice = Number((entryPrice + exitPriceChange).toFixed(2));
 
       await addDoc(collection(db, 'trades'), {
-        userId: userId.trim(),
+        userId: currentUser.uid,
+        userEmail: currentUser.email || '',
         symbol: selectedCrypto.symbol,
         cryptoName: selectedCrypto.name,
         type: type, // 'buy' or 'sell'
