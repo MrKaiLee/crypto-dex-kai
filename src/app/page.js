@@ -513,7 +513,7 @@ if (authChecking) {
             <div className="bg-[#2b313a]/20 border border-[#2b313a] rounded-2xl p-4 space-y-3">
               <div className="flex justify-between items-center">
                 <h3 className="font-bold text-white text-sm">Market Trend & Live Prices</h3>
-                <button onClick={() => setActiveTab('market')} className="text-[#f0b90b] hover:underline font-semibold cursor-pointer">View All →</button>
+                <Link href="/market" className="text-[#f0b90b] hover:underline font-semibold cursor-pointer">View All →</Link>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {cryptoList.slice(0, 3).map((coin) => (
