@@ -72,7 +72,7 @@ export default function AdminTrades() {
                     </span>
                   </div>
                   <p className="text-sm text-slate-300">
-                    User: <span className="font-semibold text-blue-400">{trade.userId}</span>
+                    User: <span className="font-semibold text-blue-400">{trade.userEmail || trade.userId}</span>
                   </p>
                   <p className="text-xs text-slate-400">
                     Amount: <span className="text-white font-bold">${trade.amount}</span> | Leverage: <span className="text-white font-bold">{trade.leverage}x</span> | Duration: <span className="text-white font-bold">{trade.duration}</span>

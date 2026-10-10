@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { collection, addDoc, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/firebase';
 import Link from 'next/link';
-
+import { onAuthStateChanged } from 'firebase/auth';
 // Available Cryptos list with mock market prices
 const CRYPTO_MARKET = [
   { symbol: 'ETHUSD', name: 'Ethereum / U.S. Dollar', price: 2424.40 },
@@ -39,23 +39,50 @@ const [cryptoMarket, setCryptoMarket] = useState(CRYPTO_MARKET);
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Fetch real-time trade history for the user
+    // Fill the lookup box with the logged-in user's email automatically
   useEffect(() => {
-    if (!userId.trim()) {
+    const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
+      setUserId(u ? u.email || u.uid : '');
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  // Fetch real-time trade history for the user (works with email or user id)
+  useEffect(() => {
+    const value = userId.trim();
+    if (!value) {
       setTradeHistory([]);
-      return;
+      return undefined;
     }
 
-    const q = query(collection(db, 'trades'), where('userId', '==', userId.trim()));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const historyList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setTradeHistory(historyList);
-    });
+    const toMs = (t) =>
+      t.createdAt && typeof t.createdAt.toMillis === 'function' ? t.createdAt.toMillis() : Date.now();
 
-    return () => unsubscribe();
+    const results = [[], []];
+    const publish = () => {
+      const merged = new Map();
+      results.flat().forEach((t) => merged.set(t.id, t));
+      setTradeHistory(Array.from(merged.values()).sort((a, b) => toMs(b) - toMs(a)));
+    };
+
+    // Older trades store the email in userId, newer ones store the email in userEmail
+    const queries = [
+      query(collection(db, 'trades'), where('userId', '==', value)),
+      query(collection(db, 'trades'), where('userEmail', '==', value)),
+    ];
+
+    const unsubscribers = queries.map((q, i) =>
+      onSnapshot(
+        q,
+        (snapshot) => {
+          results[i] = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+          publish();
+        },
+        (error) => console.error('Trade history error:', error)
+      )
+    );
+
+    return () => unsubscribers.forEach((unsub) => unsub());
   }, [userId]);
 
   // Fetch live crypto prices from our own cached route (avoids CoinGecko rate limits)
@@ -401,10 +428,15 @@ const [cryptoMarket, setCryptoMarket] = useState(CRYPTO_MARKET);
               <div className="flex justify-between bg-slate-800/50 p-2.5 rounded-lg">
                 <span className="text-slate-400">Profit / Loss:</span>
                 <span className={`font-bold ${
-                  Number(selectedTradeDetails.profitAmount) >= 0 ? 'text-green-400' : 'text-red-400'
-                }`}>
-                  {Number(selectedTradeDetails.profitAmount) >= 0 ? '+' : ''}${selectedTradeDetails.profitAmount}
-                </span>
+  selectedTradeDetails.status === 'win' ? 'text-green-400' :
+  selectedTradeDetails.status === 'loss' ? 'text-red-400' : 'text-yellow-400'
+}`}>
+  {selectedTradeDetails.status === 'win'
+    ? `+$${selectedTradeDetails.profitAmount}`
+    : selectedTradeDetails.status === 'loss'
+    ? `-$${selectedTradeDetails.amount}`
+    : 'Pending'}
+</span>
               </div>
             </div>
 
