@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/firebase';
 
 export default function AdminTrades() {
@@ -25,9 +25,11 @@ export default function AdminTrades() {
   const handleTradeAction = async (tradeId, newStatus) => {
     try {
       const tradeRef = doc(db, 'trades', tradeId);
-      await updateDoc(tradeRef, {
-        status: newStatus // 'approved', 'win', or 'loss'
-      });
+      const updates = { status: newStatus }; // 'approved', 'win', or 'loss'
+if (newStatus === 'win' || newStatus === 'loss') {
+  updates.closedAt = serverTimestamp();
+}
+await updateDoc(tradeRef, updates);
       alert(`Trade status updated to ${newStatus.toUpperCase()} successfully!`);
     } catch (error) {
       console.error("Error updating trade status: ", error);

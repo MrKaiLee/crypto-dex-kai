@@ -438,6 +438,30 @@ const [cryptoMarket, setCryptoMarket] = useState(CRYPTO_MARKET);
     : 'Pending'}
 </span>
               </div>
+              <div className="flex justify-between bg-slate-800/50 p-2.5 rounded-lg">
+  <span className="text-slate-400">Opened:</span>
+  <span className="font-bold text-white text-sm">
+    {selectedTradeDetails.createdAt && selectedTradeDetails.createdAt.toDate
+      ? selectedTradeDetails.createdAt.toDate().toLocaleString()
+      : '-'}
+  </span>
+</div>
+<div className="flex justify-between bg-slate-800/50 p-2.5 rounded-lg">
+  <span className="text-slate-400">Closed:</span>
+  <span className="font-bold text-white text-sm">
+    {selectedTradeDetails.closedAt && selectedTradeDetails.closedAt.toDate
+      ? selectedTradeDetails.closedAt.toDate().toLocaleString()
+      : selectedTradeDetails.status === 'win' || selectedTradeDetails.status === 'loss'
+      ? '-'
+      : 'Not closed yet'}
+  </span>
+</div>
+<div className="flex justify-between bg-slate-800/50 p-2.5 rounded-lg">
+  <span className="text-slate-400">Order ID:</span>
+  <span className="font-bold text-white text-sm">
+    #{String(selectedTradeDetails.id).slice(-6).toUpperCase()}
+  </span>
+</div>
             </div>
 
             <button 
