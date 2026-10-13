@@ -14,7 +14,13 @@ export default function AdminTrades() {
         id: doc.id,
         ...doc.data()
       }));
-      setTrades(tradesList);
+      setTrades(
+  [...tradesList].sort((a, b) => {
+    const ms = (t) =>
+      t.createdAt && typeof t.createdAt.toMillis === 'function' ? t.createdAt.toMillis() : 0;
+    return ms(b) - ms(a);
+  })
+);
       setLoading(false);
     });
 
