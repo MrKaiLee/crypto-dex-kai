@@ -4,6 +4,7 @@ import { collection, addDoc, query, where, onSnapshot, serverTimestamp } from 'f
 import { auth, db } from '@/firebase';
 import Link from 'next/link';
 import { onAuthStateChanged } from 'firebase/auth';
+import { withEffectiveStatus } from '../tradeStatus';
 // Available Cryptos list with mock market prices
 const CRYPTO_MARKET = [
   { symbol: 'ETHUSD', name: 'Ethereum / U.S. Dollar', price: 2424.40 },
@@ -84,7 +85,18 @@ const [cryptoMarket, setCryptoMarket] = useState(CRYPTO_MARKET);
 
     return () => unsubscribers.forEach((unsub) => unsub());
   }, [userId]);
+  // Re-check every second so expired pending trades switch to Loss on screen
+  const [now, setNow] = useState(Date.now());
+  const hasPendingTrade = tradeHistory.some((t) => t.status === 'pending');
 
+  useEffect(() => {
+    if (!hasPendingTrade) return undefined;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [hasPendingTrade]);
+
+  // Expired pending trades are shown as an automatic loss (display only)
+  const shownHistory = tradeHistory.map((t) => withEffectiveStatus(t, now));
   // Fetch live crypto prices from our own cached route (avoids CoinGecko rate limits)
   useEffect(() => {
     const fetchLivePrices = async () => {
@@ -337,7 +349,7 @@ const [cryptoMarket, setCryptoMarket] = useState(CRYPTO_MARKET);
             <p className="text-slate-400 text-sm">No orders found.</p>
           ) : (
             <div className="space-y-3">
-              {tradeHistory.map((trade) => (
+              {shownHistory.map((trade) => (
                 <div 
                   key={trade.id} 
                   onClick={() => setSelectedTradeDetails(trade)}
