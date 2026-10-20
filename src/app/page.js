@@ -13,6 +13,7 @@ import PromoBanner from './PromoBanner';
 import ForexRates from './ForexRates';
 import RecentActivity from './RecentActivity';
 import FavoritesCard from './FavoritesCard';
+import LearningTip from './LearningTip';
 import TradingChart from './TradingChart';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -531,6 +532,7 @@ if (authChecking) {
             <FavoritesCard coins={cryptoList} />
             <TopMovers coins={cryptoList} onSelect={(coin) => { setSelectedMarketCoin(coin); setActiveTab('market'); }} />
               <ForexRates />
+              <LearningTip />
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="order-2 lg:order-1 lg:col-span-2">
                 <NewsFeed />
