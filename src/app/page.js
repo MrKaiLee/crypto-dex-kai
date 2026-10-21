@@ -15,6 +15,7 @@ import RecentActivity from './RecentActivity';
 import FavoritesCard from './FavoritesCard';
 import LearningTip from './LearningTip';
 import WelcomeMood from './WelcomeMood';
+import MarketSessions from './MarketSessions';
 import TradingChart from './TradingChart';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -533,6 +534,7 @@ if (authChecking) {
             </div>
             <FavoritesCard coins={cryptoList} />
             <TopMovers coins={cryptoList} onSelect={(coin) => { setSelectedMarketCoin(coin); setActiveTab('market'); }} />
+              <MarketSessions />
               <ForexRates />
               <LearningTip />
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
