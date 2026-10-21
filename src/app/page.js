@@ -14,6 +14,7 @@ import ForexRates from './ForexRates';
 import RecentActivity from './RecentActivity';
 import FavoritesCard from './FavoritesCard';
 import LearningTip from './LearningTip';
+import WelcomeMood from './WelcomeMood';
 import TradingChart from './TradingChart';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -479,6 +480,7 @@ if (authChecking) {
         {activeTab === 'home' && (
           <div className="space-y-4">
             <PriceTicker coins={cryptoList} />
+            <WelcomeMood coins={cryptoList} />
             <PromoBanner onNavigate={setActiveTab} />
             <div className="bg-gradient-to-r from-[#2b313a]/50 to-[#1e2329] border border-[#2b313a] p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="space-y-2 text-center md:text-left">
