@@ -17,6 +17,8 @@ import LearningTip from './LearningTip';
 import WelcomeMood from './WelcomeMood';
 import MarketSessions from './MarketSessions';
 import CoinSpotlight from './CoinSpotlight';
+import HomeAnimations from './HomeAnimations';
+import LiveMiniCharts from './LiveMiniCharts';
 import TradingChart from './TradingChart';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -480,8 +482,9 @@ if (authChecking) {
       <div className="p-4 max-w-6xl mx-auto space-y-4">
         
         {activeTab === 'home' && (
-          <div className="space-y-4">
+          <div className="space-y-4 home-animate">
             <PriceTicker coins={cryptoList} />
+            <HomeAnimations />
             <WelcomeMood coins={cryptoList} />
             <PromoBanner onNavigate={setActiveTab} />
             <div className="bg-gradient-to-r from-[#2b313a]/50 to-[#1e2329] border border-[#2b313a] p-6 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
@@ -535,6 +538,7 @@ if (authChecking) {
             </div>
             <CoinSpotlight coins={cryptoList} />
             <FavoritesCard coins={cryptoList} />
+            <LiveMiniCharts />
             <TopMovers coins={cryptoList} onSelect={(coin) => { setSelectedMarketCoin(coin); setActiveTab('market'); }} />
               <MarketSessions />
               <ForexRates />
