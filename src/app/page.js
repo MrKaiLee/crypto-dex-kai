@@ -21,6 +21,7 @@ import HomeAnimations from './HomeAnimations';
 import LiveMiniCharts from './LiveMiniCharts';
 import WorldClock from './WorldClock';
 import TradingChart from './TradingChart';
+import PortfolioOverview from './PortfolioOverview';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
@@ -760,6 +761,7 @@ if (authChecking) {
                   <div className="text-xl font-bold text-white mt-1">${futuresBalance.toFixed(2)}</div>
                 </div>
               </div>
+              <PortfolioOverview spot={spotBalance} futures={futuresBalance} holdings={userCryptoHoldings} coins={cryptoList} />
               <RecentActivity userId={auth.currentUser ? auth.currentUser.uid : null} />
 
               <div className="space-y-2 mt-4">
