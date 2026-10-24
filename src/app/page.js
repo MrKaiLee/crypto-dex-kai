@@ -19,6 +19,7 @@ import MarketSessions from './MarketSessions';
 import CoinSpotlight from './CoinSpotlight';
 import HomeAnimations from './HomeAnimations';
 import LiveMiniCharts from './LiveMiniCharts';
+import WorldClock from './WorldClock';
 import TradingChart from './TradingChart';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -541,6 +542,7 @@ if (authChecking) {
             <LiveMiniCharts />
             <TopMovers coins={cryptoList} onSelect={(coin) => { setSelectedMarketCoin(coin); setActiveTab('market'); }} />
               <MarketSessions />
+              <WorldClock />
               <ForexRates />
               <LearningTip />
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
