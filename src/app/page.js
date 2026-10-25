@@ -493,7 +493,7 @@ if (authChecking) {
               <div className="space-y-2 text-center md:text-left">
                 <h1 className="text-xl font-bold text-white">MetaTradeX Exchange</h1>
                 <p className="text-gray-400">Buy, trade, and earn cryptocurrency with professional live tools.</p>
-                <div className="text-sm font-semibold text-[#f0b90b] pt-1">Total Spot Balance: ${spotBalance.toFixed(2)} | Futures Balance: ${futuresBalance.toFixed(2)}</div>
+                <div className="text-sm font-semibold text-[#f0b90b] pt-1">Total Spot Balance: ${spotBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | Futures Balance: ${futuresBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
               </div>
               <div className="flex flex-wrap gap-3 justify-center">
                 <button onClick={() => setActiveTab('asset')} className="bg-[#f0b90b] hover:bg-[#d9a70a] text-black font-bold px-4 py-2 rounded-xl cursor-pointer">
@@ -754,11 +754,11 @@ if (authChecking) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-[#181a20] p-4 rounded-xl border border-gray-800">
                   <div className="text-gray-400 text-xs">Spot Wallet Balance</div>
-                  <div className="text-xl font-bold text-white mt-1">${spotBalance.toFixed(2)}</div>
+                  <div className="text-xl font-bold text-white mt-1">${spotBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 </div>
                 <div className="bg-[#181a20] p-4 rounded-xl border border-gray-800">
                   <div className="text-gray-400 text-xs">Futures Wallet Balance</div>
-                  <div className="text-xl font-bold text-white mt-1">${futuresBalance.toFixed(2)}</div>
+                  <div className="text-xl font-bold text-white mt-1">${futuresBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 </div>
               </div>
               <PortfolioOverview spot={spotBalance} futures={futuresBalance} holdings={userCryptoHoldings} coins={cryptoList} />
