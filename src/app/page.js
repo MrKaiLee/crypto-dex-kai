@@ -22,6 +22,7 @@ import LiveMiniCharts from './LiveMiniCharts';
 import WorldClock from './WorldClock';
 import TradingChart from './TradingChart';
 import PortfolioOverview from './PortfolioOverview';
+import CandlePatterns from './CandlePatterns';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
@@ -553,6 +554,9 @@ if (authChecking) {
               <div className="order-1 lg:order-2 lg:col-span-1">
                 <FearGreedIndex />
               </div>
+              <div className="order-1 lg:order-3 lg:col-span-3">
+  <CandlePatterns />
+</div>
             </div>
           </div>
         )}
