@@ -23,6 +23,7 @@ import WorldClock from './WorldClock';
 import TradingChart from './TradingChart';
 import PortfolioOverview from './PortfolioOverview';
 import CandlePatterns from './CandlePatterns';
+import PnlCalculator from './PnlCalculator';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
@@ -547,6 +548,7 @@ if (authChecking) {
               <WorldClock />
               <ForexRates />
               <LearningTip />
+              <PnlCalculator />
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="order-2 lg:order-1 lg:col-span-2">
                 <NewsFeed />
