@@ -25,6 +25,7 @@ import PortfolioOverview from './PortfolioOverview';
 import CandlePatterns from './CandlePatterns';
 import PnlCalculator from './PnlCalculator';
 import CryptoQuiz from './CryptoQuiz';
+import CryptoVoices from './CryptoVoices';
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
@@ -549,6 +550,7 @@ if (authChecking) {
               <WorldClock />
               <ForexRates />
               <LearningTip />
+              <CryptoVoices />
               <CryptoQuiz />
               <PnlCalculator />
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
