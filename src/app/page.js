@@ -4,6 +4,7 @@ import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, setDoc, onSnapshot, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import SupportComponent from '@/components/Support';
 import NewsFeed from '@/components/NewsFeed';
 import FearGreedIndex from '@/components/FearGreedIndex';
@@ -203,7 +204,35 @@ export default function Home() {
       setAuthError(err.message);
     }
   };
+  const handleForgotPassword = async () => {
+    setAuthError('');
+    setAuthSuccess('');
 
+    const email = authEmail.trim();
+    if (!email) {
+      setAuthError('Enter your email above first, then press "Forgot password?" again.');
+      return;
+    }
+
+    const neutralMessage =
+      'If an account exists for this email, a password reset link has been sent. Check your inbox and spam folder.';
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setAuthSuccess(neutralMessage);
+    } catch (err) {
+      if (err && err.code === 'auth/user-not-found') {
+        // Same message on purpose, so nobody can discover which emails are registered
+        setAuthSuccess(neutralMessage);
+      } else if (err && err.code === 'auth/invalid-email') {
+        setAuthError('Please enter a valid email address.');
+      } else if (err && err.code === 'auth/too-many-requests') {
+        setAuthError('Too many requests. Please wait a few minutes and try again.');
+      } else {
+        setAuthError('Could not send the reset email. Please try again later.');
+      }
+    }
+  };
   const handleSignOut = async () => {
     try {
       await signOut(auth);
@@ -444,7 +473,17 @@ if (authChecking) {
                 </button>
               </div>
             </div>
-
+{!isSignUp && (
+  <div className="text-right -mt-2">
+    <button
+      type="button"
+      onClick={handleForgotPassword}
+      className="text-[#f0b90b] hover:underline text-xs font-semibold cursor-pointer"
+    >
+      Forgot password?
+    </button>
+  </div>
+)}
             <button type="submit" className="w-full bg-[#f0b90b] hover:bg-[#d9a70a] text-black font-bold p-2.5 rounded transition cursor-pointer mt-2">
               {isSignUp ? 'Sign Up' : 'Sign In'}
             </button>
